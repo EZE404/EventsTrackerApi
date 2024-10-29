@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MyProject.DTOs
+namespace EventsTrackerApi.DTOs
 {
     public class UserRegistrationDto
     {

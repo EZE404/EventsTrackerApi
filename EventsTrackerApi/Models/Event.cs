@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MyProject.Models
+namespace EventsTrackerApi.Models
 {
     public class Event
     {
@@ -10,9 +11,9 @@ namespace MyProject.Models
         [Required, MaxLength(70)]
         public string Name { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
-        [MaxLength(70)]
+        [Required, MaxLength(70)]
         public string Location { get; set; }
 
         public DateTime StartDateTime { get; set; }
@@ -20,14 +21,17 @@ namespace MyProject.Models
 
         public int Capacity { get; set; }
 
-        // Relaciones
+        [ForeignKey("User")]
         public int CreatorID { get; set; }
-        public User Creator { get; set; }
 
+        [ForeignKey("EventStatus")]
         public int StatusID { get; set; }
+
+        public User Creator { get; set; }
         public EventStatus Status { get; set; }
 
-        public ICollection<EventInvitation> EventInvitations { get; set; }
-        public ICollection<EventPost> EventPosts { get; set; }
+        public ICollection<EventInvitation> Invitations { get; set; } = new List<EventInvitation>();
+        public ICollection<EventPost> Posts { get; set; } = new List<EventPost>();
+        public string CoverPhotoPath { get; set; }
     }
 }

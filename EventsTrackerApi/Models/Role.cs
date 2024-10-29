@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MyProject.Models
+namespace EventsTrackerApi.Models
 {
     public class Role
     {
@@ -10,8 +10,9 @@ namespace MyProject.Models
         [Required, MaxLength(50)]
         public string Name { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
-        public ICollection<UserRole> UserRoles { get; set; }
+        // Relación con UserRole
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 }

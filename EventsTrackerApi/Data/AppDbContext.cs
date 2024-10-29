@@ -1,7 +1,7 @@
+using EventsTrackerApi.Models;
 using Microsoft.EntityFrameworkCore;
-using MyProject.Models;
 
-namespace MyProject.Data
+namespace EventsTrackerApi.Data
 {
     public class AppDbContext : DbContext
     {
@@ -39,7 +39,7 @@ namespace MyProject.Data
             // Configuración de la relación uno a muchos entre User y Event
             modelBuilder.Entity<Event>()
                 .HasOne(e => e.Creator)
-                .WithMany(u => u.Events)
+                .WithMany(u => u.CreatedEvents)
                 .HasForeignKey(e => e.CreatorID)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -52,7 +52,7 @@ namespace MyProject.Data
             // Configuración de la relación entre Event y EventInvitation
             modelBuilder.Entity<EventInvitation>()
                 .HasOne(ei => ei.Event)
-                .WithMany(e => e.EventInvitations)
+                .WithMany(e => e.Invitations)
                 .HasForeignKey(ei => ei.EventID);
 
             modelBuilder.Entity<EventInvitation>()
@@ -63,12 +63,12 @@ namespace MyProject.Data
             // Configuración de la relación entre Event y EventPost
             modelBuilder.Entity<EventPost>()
                 .HasOne(ep => ep.Event)
-                .WithMany(e => e.EventPosts)
+                .WithMany(e => e.Posts)
                 .HasForeignKey(ep => ep.EventID);
 
             modelBuilder.Entity<EventPost>()
                 .HasOne(ep => ep.User)
-                .WithMany(u => u.EventPosts)
+                .WithMany(u => u.Posts)
                 .HasForeignKey(ep => ep.UserID);
         }
     }

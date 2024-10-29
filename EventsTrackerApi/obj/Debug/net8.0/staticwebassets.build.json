@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "NeDCbCfxXOZJA+kZPRc9vZT1uDCnse9hMNrW5gPLaGo=",
+  "Source": "EventsTrackerApi",
+  "BasePath": "_content/EventsTrackerApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

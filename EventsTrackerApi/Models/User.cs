@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MyProject.Models
+namespace EventsTrackerApi.Models
 {
     public class User
     {
@@ -14,17 +14,20 @@ namespace MyProject.Models
         [Required, MaxLength(70)]
         public string LastName { get; set; }
 
-        [Required, MaxLength(140), EmailAddress]
+        [Required, MaxLength(140)]
         public string Email { get; set; }
 
-        public string Bio { get; set; }
-
-        [Required]
+        [Required, MaxLength(16)]
         public string PasswordHash { get; set; }
+        public string? ProfilePhotoPath { get; set; }
+        public string? Bio { get; set; }
 
         // Relaciones
-        public ICollection<Event> Events { get; set; }
-        public ICollection<EventPost> EventPosts { get; set; }
-        public ICollection<UserRole> UserRoles { get; set; }
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public ICollection<Event> CreatedEvents { get; set; } = new List<Event>();
+        public ICollection<EventPost> Posts { get; set; } = new List<EventPost>();
+        public ICollection<EventInvitation> EventInvitations { get; set; } = new List<EventInvitation>();
+
+
     }
 }

@@ -1,79 +1,55 @@
+using EventsTrackerApi.Models;
+using EventsTrackerApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using MyProject.Models;
-using MyProject.Services.Interfaces;
-using MyProject.DTOs;
 
-namespace MyProject.Controllers
+namespace EventsTrackerApi.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class EventController : ControllerBase
+    [ApiController]
+    public class EventsController : ControllerBase
     {
-        private readonly IEventService _eventService;
+        private readonly IRepository<Event> _eventRepository;
 
-        public EventController(IEventService eventService)
+        public EventsController(IRepository<Event> eventRepository)
         {
-            _eventService = eventService;
+            _eventRepository = eventRepository;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetEventById(int id)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Event>>> GetEvents()
         {
-            var eventItem = await _eventService.GetEventByIdAsync(id);
-            return eventItem != null ? Ok(eventItem) : NotFound("Event not found.");
-        }
-
-        [HttpGet("all")]
-        public async Task<IActionResult> GetAllEvents()
-        {
-            var events = await _eventService.GetAllEventsAsync();
+            var events = await _eventRepository.GetAllAsync();
             return Ok(events);
         }
 
-        [Authorize]
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateEvent([FromBody] CreateEventDto createEventDto)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Event>> GetEvent(int id)
         {
-            var newEvent = new Event
-            {
-                Name = createEventDto.Name,
-                Description = createEventDto.Description,
-                Location = createEventDto.Location,
-                StartDateTime = createEventDto.StartDateTime,
-                EndDateTime = createEventDto.EndDateTime,
-                Capacity = createEventDto.Capacity,
-                CreatorID = createEventDto.CreatorID
-            };
-
-            await _eventService.CreateEventAsync(newEvent);
-            return Ok("Event created successfully.");
+            var evt = await _eventRepository.GetByIdAsync(id);
+            if (evt == null) return NotFound();
+            return Ok(evt);
         }
 
-        [Authorize]
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateEvent(int id, [FromBody] UpdateEventDto updateEventDto)
+        [HttpPost]
+        public async Task<ActionResult<Event>> CreateEvent(Event evt)
         {
-            var eventToUpdate = await _eventService.GetEventByIdAsync(id);
-            if (eventToUpdate == null) return NotFound("Event not found.");
-
-            eventToUpdate.Name = updateEventDto.Name;
-            eventToUpdate.Description = updateEventDto.Description;
-            eventToUpdate.Location = updateEventDto.Location;
-            eventToUpdate.StartDateTime = updateEventDto.StartDateTime;
-            eventToUpdate.EndDateTime = updateEventDto.EndDateTime;
-            eventToUpdate.Capacity = updateEventDto.Capacity;
-
-            await _eventService.UpdateEventAsync(eventToUpdate);
-            return Ok("Event updated successfully.");
+            await _eventRepository.AddAsync(evt);
+            return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);
         }
 
-        [Authorize]
-        [HttpDelete("delete/{id}")]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateEvent(int id, Event evt)
+        {
+            if (id != evt.ID) return BadRequest();
+            await _eventRepository.UpdateAsync(evt);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteEvent(int id)
         {
-            await _eventService.DeleteEventAsync(id);
-            return Ok("Event deleted successfully.");
+            await _eventRepository.DeleteAsync(id);
+            return NoContent();
         }
     }
 }

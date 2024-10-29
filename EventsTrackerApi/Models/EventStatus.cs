@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace MyProject.Models
+namespace EventsTrackerApi.Models
 {
     public class EventStatus
     {
@@ -10,6 +10,6 @@ namespace MyProject.Models
         [Required, MaxLength(20)]
         public string Name { get; set; }
 
-        public ICollection<Event> Events { get; set; }
+        public ICollection<Event> Events { get; set; } = new List<Event>();
     }
 }

@@ -1,76 +1,100 @@
+using EventsTrackerApi.Models;
+using EventsTrackerApi.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using MyProject.Models;
-using MyProject.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using MyProject.DTOs;
+using Microsoft.AspNetCore.Http;
+using System.IO;
 
-namespace MyProject.Controllers
+namespace EventsTrackerApi.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
-    public class UserController : ControllerBase
+    [ApiController]
+    public class UsersController : ControllerBase
     {
-        private readonly IUserService _userService;
+        private readonly IRepository<User> _userRepository;
+        private readonly IRepository<Event> _eventRepository;
 
-        public UserController(IUserService userService)
+        public UsersController(IRepository<User> userRepository, IRepository<Event> eventRepository)
         {
-            _userService = userService;
+            _userRepository = userRepository;
+            _eventRepository = eventRepository;
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
-            var user = new User
-            {
-                FirstName = registerDto.FirstName,
-                LastName = registerDto.LastName,
-                Email = registerDto.Email
-            };
-
-            await _userService.RegisterUserAsync(user, registerDto.Password);
-            return Ok("User registered successfully.");
+            var users = await _userRepository.GetAllAsync();
+            return Ok(users);
         }
 
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> GetUser(int id)
         {
-            var user = await _userService.GetUserByEmailAsync(loginDto.Email);
-            if (user == null || !await _userService.CheckPasswordAsync(user, loginDto.Password))
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) return NotFound();
+            return Ok(user);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<User>> CreateUser(User user)
+        {
+            await _userRepository.AddAsync(user);
+            return CreatedAtAction(nameof(GetUser), new { id = user.ID }, user);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUser(int id, User user)
+        {
+            if (id != user.ID) return BadRequest();
+            await _userRepository.UpdateAsync(user);
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            await _userRepository.DeleteAsync(id);
+            return NoContent();
+        }
+
+        [HttpPost("{id}/upload-profile-photo")]
+        public async Task<IActionResult> UploadProfilePhoto(int id, IFormFile file)
+        {
+            if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
+
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) return NotFound("User not found.");
+
+            var filePath = Path.Combine("wwwroot/images/profiles", $"{Guid.NewGuid()}_{file.FileName}");
+            using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                return Unauthorized("Invalid credentials.");
+                await file.CopyToAsync(stream);
             }
 
-            var token = await _userService.GenerateJwtTokenAsync(user);
-            return Ok(new { Token = token });
+            user.ProfilePhotoPath = filePath;  // Guarda la ruta en la base de datos
+            await _userRepository.UpdateAsync(user);
+
+            return Ok("Profile photo uploaded successfully.");
         }
 
-        [Authorize]
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserDto updateDto)
+        [HttpPost("{id}/upload-cover-photo")]
+        public async Task<IActionResult> UploadCoverPhoto(int id, IFormFile file)
         {
-            var user = await _userService.GetUserByIdAsync(updateDto.Id);
-            if (user == null) return NotFound("User not found.");
+            if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-            user.FirstName = updateDto.FirstName;
-            user.LastName = updateDto.LastName;
-            user.Bio = updateDto.Bio;
+            var evt = await _eventRepository.GetByIdAsync(id);
+            if (evt == null) return NotFound("Event not found.");
 
-            await _userService.UpdateUserAsync(user);
-            return Ok("User updated successfully.");
+            var filePath = Path.Combine("wwwroot/images/covers", $"{Guid.NewGuid()}_{file.FileName}");
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            evt.CoverPhotoPath = filePath;
+            await _eventRepository.UpdateAsync(evt);
+
+            return Ok("Cover photo uploaded successfully.");
         }
 
-        [Authorize]
-        [HttpPut("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
-        {
-            var user = await _userService.GetUserByIdAsync(changePasswordDto.UserId);
-            if (user == null) return NotFound("User not found.");
-
-            var isPasswordValid = await _userService.CheckPasswordAsync(user, changePasswordDto.OldPassword);
-            if (!isPasswordValid) return BadRequest("Incorrect old password.");
-
-            await _userService.RegisterUserAsync(user, changePasswordDto.NewPassword);
-            return Ok("Password updated successfully.");
-        }
     }
 }

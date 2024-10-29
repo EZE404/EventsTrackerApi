@@ -1,4 +1,4 @@
-namespace MyProject.DTOs
+namespace EventsTrackerApi.DTOs
 {
     public class ChangePasswordDto
     {

@@ -1,22 +1,26 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace MyProject.Models
+namespace EventsTrackerApi.Models
 {
     public class EventInvitation
     {
         [Key]
         public int ID { get; set; }
 
+        [ForeignKey("Event")]
         public int EventID { get; set; }
-        public Event Event { get; set; }
 
+        [ForeignKey("User")]
         public int UserID { get; set; }
-        public User User { get; set; }
 
-        [MaxLength(20)]
-        public string ResponseStatus { get; set; } // Accepted, Rejected, Maybe
+        [Required, MaxLength(20)]
+        public string ResponseStatus { get; set; }
 
         public DateTime SentDate { get; set; }
         public DateTime? ResponseDate { get; set; }
+
+        public Event Event { get; set; }
+        public User User { get; set; }
     }
 }

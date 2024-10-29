@@ -1,21 +1,18 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using MyProject.Services;
-using MyProject.Repositories;
-using MyProject.Helpers;
-using FluentValidation.AspNetCore;
 using Newtonsoft.Json;
-using MyProject.Data;
+using EventsTrackerApi.Data;
+using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuración de base de datos MySQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),
-    new MySqlServerVersion(new Version(8, 0, 21))));
+    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
 // Configuración de JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -33,24 +30,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configuración de inyección de dependencias
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
 // Registro de repositorios para inyección de dependencias
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IRepository<User>, UserRepository>();
+builder.Services.AddScoped<IRepository<Event>, EventRepository>();
 // Añadir más repositorios según sea necesario
-
-// Configuración de MailKit
-builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
 // Configuración de controllers y validación
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
-        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore)
-    .AddFluentValidation(config =>
-        config.RegisterValidatorsFromAssemblyContaining<Program>());
+        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
 
 // Configuración de Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -65,11 +53,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseStaticFiles();
+app.UseRouting();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.StatusCode = 500;
+        context.Response.ContentType = "application/json";
+        var error = new { message = "Ha ocurrido un error. Por favor, intente más tarde." };
+        await context.Response.WriteAsJsonAsync(error);
+    });
+});
 
 app.Run();
