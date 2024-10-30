@@ -7,8 +7,12 @@
       "RelativeMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|solutionrelative:eventstrackerapi\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|c:\\lab3\\eventstrackerapi\\eventstrackerapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|solutionrelative:eventstrackerapi\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|c:\\lab3\\eventstrackerapi\\eventstrackerapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|solutionrelative:eventstrackerapi\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|c:\\lab3\\eventstrackerapi\\eventstrackerapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{A1F3CA2C-5F64-41C2-8C31-62F923016E00}|EventsTrackerApi\\EventsTrackerApi.csproj|solutionrelative:eventstrackerapi\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,12 +22,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 0,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 0,
@@ -32,22 +32,36 @@
               "RelativeDocumentMoniker": "EventsTrackerApi\\Data\\AppDbContext.cs",
               "ToolTip": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\Data\\AppDbContext.cs",
               "RelativeToolTip": "EventsTrackerApi\\Data\\AppDbContext.cs",
-              "ViewState": "AgIAAA0AAAAAAAAAAAA0wBsAAAArAAAAAAAAAA==",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAQwA0AAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-29T19:39:31.549Z",
+              "WhenOpened": "2024-10-30T06:31:03.991Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "EventsTrackerApi\\Controllers\\AuthController.cs",
-              "ToolTip": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "EventsTrackerApi\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAEwAAAAJAAAAAAAAAA==",
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\Program.cs",
+              "RelativeDocumentMoniker": "EventsTrackerApi\\Program.cs",
+              "ToolTip": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\Program.cs",
+              "RelativeToolTip": "EventsTrackerApi\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-10-29T19:39:08.342Z"
+              "WhenOpened": "2024-10-30T06:25:31.933Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\appsettings.json",
+              "RelativeDocumentMoniker": "EventsTrackerApi\\appsettings.json",
+              "ToolTip": "C:\\lab3\\EventsTrackerApi\\EventsTrackerApi\\appsettings.json",
+              "RelativeToolTip": "EventsTrackerApi\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2024-10-30T06:16:01.926Z",
+              "EditorCaption": ""
             }
           ]
         }

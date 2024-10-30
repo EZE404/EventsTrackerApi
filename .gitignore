@@ -1,0 +1,3 @@
+# Ignorar carpetas bin y obj dentro de EventsTrackerApi
+EventsTrackerApi/bin/
+EventsTrackerApi/obj/

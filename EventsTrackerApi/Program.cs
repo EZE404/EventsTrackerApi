@@ -8,7 +8,11 @@ using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-
+// Cargar User Secrets en modo Desarrollo
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
 // Configuración de base de datos MySQL
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("DefaultConnection"),

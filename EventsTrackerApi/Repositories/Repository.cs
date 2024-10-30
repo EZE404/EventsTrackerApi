@@ -1,11 +1,12 @@
+using EventsTrackerApi.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace EventsTrackerApi.Repositories
 {
-    public class Repository<T>(DbContext context) : IRepository<T> where T : class
+    public class Repository<T>(AppDbContext context) : IRepository<T> where T : class
     {
-        protected readonly DbContext _context = context;
+        protected readonly AppDbContext _context = context;
 
         public async Task<IEnumerable<T>> GetAllAsync()
         {

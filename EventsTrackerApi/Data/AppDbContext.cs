@@ -15,6 +15,32 @@ namespace EventsTrackerApi.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Configurar las relaciones entre User y EventInvitation
+
+            modelBuilder.Entity<EventInvitation>()
+                .HasOne(ei => ei.User)
+                .WithMany(u => u.ReceivedInvitations)
+                .HasForeignKey(ei => ei.UserID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EventInvitation>()
+                .HasOne(ei => ei.Creator)
+                .WithMany(u => u.CreatedInvitations)
+                .HasForeignKey(ei => ei.CreatorID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<EventInvitation>()
+                .HasOne(ei => ei.Event)
+                .WithMany(e => e.Invitations) // Agrega ICollection<EventInvitation> Invitations en Event si aún no lo has hecho
+                .HasForeignKey(ei => ei.EventID)
+                .OnDelete(DeleteBehavior.Cascade);
+        }
+
+        /*
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
             // Configuración de las relaciones de Event
             modelBuilder.Entity<Event>() // Con user creador
                 .HasOne(e => e.Creator)
@@ -49,5 +75,6 @@ namespace EventsTrackerApi.Data
                 .WithMany(u => u.Posts)
                 .HasForeignKey(ep => ep.UserID);
         }
+        */
     }
 }
