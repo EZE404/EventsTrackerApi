@@ -8,17 +8,18 @@ namespace EventsTrackerApi.Models
         [Key]
         public int ID { get; set; }
 
-        [ForeignKey("Event")]
         public int EventID { get; set; }
 
-        [ForeignKey("User")]
         public int UserID { get; set; }
 
         public string Text { get; set; }
 
         public DateTime CreationDate { get; set; }
 
+        [ForeignKey("EventID")]
         public Event Event { get; set; }
+
+        [ForeignKey("UserID")]
         public User User { get; set; }
     }
 }

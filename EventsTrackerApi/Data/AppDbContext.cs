@@ -3,18 +3,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EventsTrackerApi.Data
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
-
         // Tablas en la base de datos
         public DbSet<User> Users { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<Event> Events { get; set; }
-        public DbSet<EventStatus> EventStatuses { get; set; }
         public DbSet<EventInvitation> EventInvitations { get; set; }
         public DbSet<EventPost> EventPosts { get; set; }
 
@@ -22,45 +15,30 @@ namespace EventsTrackerApi.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configuración de relaciones muchos a muchos entre User y Role
-            modelBuilder.Entity<UserRole>()
-                .HasKey(ur => new { ur.UserID, ur.RoleID });
-
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserID);
-
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(ur => ur.RoleID);
-
-            // Configuración de la relación uno a muchos entre User y Event
-            modelBuilder.Entity<Event>()
+            // Configuración de las relaciones de Event
+            modelBuilder.Entity<Event>() // Con user creador
                 .HasOne(e => e.Creator)
                 .WithMany(u => u.CreatedEvents)
                 .HasForeignKey(e => e.CreatorID)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // Configuración de la relación uno a muchos entre EventStatus y Event
-            modelBuilder.Entity<Event>()
-                .HasOne(e => e.Status)
-                .WithMany(es => es.Events)
-                .HasForeignKey(e => e.StatusID);
-
-            // Configuración de la relación entre Event y EventInvitation
-            modelBuilder.Entity<EventInvitation>()
+            // Configuración de las relaciones de EventInvitation
+            modelBuilder.Entity<EventInvitation>() // Con Event
                 .HasOne(ei => ei.Event)
                 .WithMany(e => e.Invitations)
                 .HasForeignKey(ei => ei.EventID);
 
-            modelBuilder.Entity<EventInvitation>()
+            modelBuilder.Entity<EventInvitation>() // Con User invitado
                 .HasOne(ei => ei.User)
-                .WithMany(u => u.EventInvitations)
+                .WithMany(u => u.ReceivedInvitations)
                 .HasForeignKey(ei => ei.UserID);
 
-            // Configuración de la relación entre Event y EventPost
+            modelBuilder.Entity<EventInvitation>() // Con User creador
+                .HasOne(ei => ei.User)
+                .WithMany(u => u.CreatedInvitations)
+                .HasForeignKey(ei => ei.CreatorID);
+
+            // Configuración de las relaciones de EventPost
             modelBuilder.Entity<EventPost>()
                 .HasOne(ep => ep.Event)
                 .WithMany(e => e.Posts)

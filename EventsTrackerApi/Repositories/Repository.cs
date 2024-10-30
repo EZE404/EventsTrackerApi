@@ -3,14 +3,9 @@ using System.Linq.Expressions;
 
 namespace EventsTrackerApi.Repositories
 {
-    public class Repository<T> : IRepository<T> where T : class
+    public class Repository<T>(DbContext context) : IRepository<T> where T : class
     {
-        protected readonly DbContext _context;
-
-        public Repository(DbContext context)
-        {
-            _context = context;
-        }
+        protected readonly DbContext _context = context;
 
         public async Task<IEnumerable<T>> GetAllAsync()
         {

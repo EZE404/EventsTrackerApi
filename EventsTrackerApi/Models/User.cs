@@ -19,15 +19,13 @@ namespace EventsTrackerApi.Models
 
         [Required, MaxLength(16)]
         public string PasswordHash { get; set; }
-        public string? ProfilePhotoPath { get; set; }
+        public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }
 
         // Relaciones
-        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-        public ICollection<Event> CreatedEvents { get; set; } = new List<Event>();
-        public ICollection<EventPost> Posts { get; set; } = new List<EventPost>();
-        public ICollection<EventInvitation> EventInvitations { get; set; } = new List<EventInvitation>();
-
-
+        public ICollection<Event> CreatedEvents { get; set; } = [];
+        public ICollection<EventPost> Posts { get; set; } = [];
+        public ICollection<EventInvitation> ReceivedInvitations { get; set; } = [];
+        public ICollection<EventInvitation> CreatedInvitations { get; set; } = [];
     }
 }

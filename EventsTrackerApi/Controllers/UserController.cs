@@ -70,7 +70,7 @@ namespace EventsTrackerApi.Controllers
                 await file.CopyToAsync(stream);
             }
 
-            user.ProfilePhotoPath = filePath;  // Guarda la ruta en la base de datos
+            user.AvatarUrl = filePath;  // Guarda la ruta en la base de datos
             await _userRepository.UpdateAsync(user);
 
             return Ok("Profile photo uploaded successfully.");
@@ -90,7 +90,7 @@ namespace EventsTrackerApi.Controllers
                 await file.CopyToAsync(stream);
             }
 
-            evt.CoverPhotoPath = filePath;
+            evt.FlyerUrl = filePath;
             await _eventRepository.UpdateAsync(evt);
 
             return Ok("Cover photo uploaded successfully.");

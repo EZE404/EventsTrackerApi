@@ -8,11 +8,11 @@ namespace EventsTrackerApi.Models
         [Key]
         public int ID { get; set; }
 
-        [ForeignKey("Event")]
         public int EventID { get; set; }
 
-        [ForeignKey("User")]
         public int UserID { get; set; }
+
+        public int CreatorID { get; set; }
 
         [Required, MaxLength(20)]
         public string ResponseStatus { get; set; }
@@ -20,7 +20,13 @@ namespace EventsTrackerApi.Models
         public DateTime SentDate { get; set; }
         public DateTime? ResponseDate { get; set; }
 
+        [ForeignKey("EventID")]
         public Event Event { get; set; }
+
+        [ForeignKey("UserID")]
         public User User { get; set; }
+
+        [ForeignKey("CreatorID")]
+        public User Creator { get; set; }
     }
 }

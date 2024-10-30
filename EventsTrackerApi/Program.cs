@@ -33,12 +33,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Registro de repositorios para inyección de dependencias
 builder.Services.AddScoped<IRepository<User>, UserRepository>();
 builder.Services.AddScoped<IRepository<Event>, EventRepository>();
-// Añadir más repositorios según sea necesario
+// Añadir más repositorios según sea necesario (por lo del email)
 
 // Configuración de controllers y validación
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
         options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+    /*.AddJsonOptions(options =>
+     {
+         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+     });*/
 
 // Configuración de Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -55,7 +59,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseStaticFiles();
 app.UseRouting();
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
