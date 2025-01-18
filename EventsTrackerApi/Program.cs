@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Models;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 // Cargar User Secrets en modo Desarrollo
@@ -50,8 +51,58 @@ builder.Services.AddControllers()
 
 // Configuración de Swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Events Tracker API",
+        Version = "v1",
+        Description = "API para gestionar eventos y usuarios.",
+        Contact = new OpenApiContact
+        {
+            Name = "Tu Nombre",
+            Email = "tuemail@example.com",
+            Url = new Uri("https://tu-sitio.com")
+        }
+    });
 
+    // Configuración para incluir el token JWT en Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Ingrese el token en el formato: Bearer {token}"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
 var app = builder.Build();
 
 // Configuración de middleware
@@ -59,7 +110,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
     app.UseSwagger();
-    app.UseSwaggerUI();
+     app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Events Tracker API v1");
+        c.RoutePrefix = string.Empty;
+    });
 }
 app.UseStaticFiles();
 app.UseRouting();
