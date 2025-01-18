@@ -71,4 +71,3 @@ dotnet.exe
 
 # Archivos de configuración de docker
 docker-compose.override.yml
-
