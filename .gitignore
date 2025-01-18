@@ -1,3 +1,73 @@
-# Ignorar carpetas bin y obj dentro de EventsTrackerApi
-EventsTrackerApi/bin/
-EventsTrackerApi/obj/
+# Build y binarios
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+# Archivos del depurador de Visual Studio
+*.pdb
+*.exe
+*.dll
+
+# Configuración de Visual Studio
+.vscode/
+.vscode/*
+
+# Directorios de paquetes NuGet
+**/packages
+!**/packages/build/
+
+# Archivos de configuración de usuario de Visual Studio
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Archivos de configuración de proyectos
+*.csproj.user
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+*.vcxproj.user
+
+# Archivos de lock y dependencias
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Archivos de configuración global de Visual Studio
+.vscode/settings.json
+
+# Archivos de SonarQube
+.sonarqube/
+
+# Archivos generados por Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Archivos de publicación
+.publish/
+
+# Archivos de log y reporting
+*.log
+TestResult.xml
+TestResults/
+TestRun*.trx
+TestRun*.log
+
+# Archivos temporales
+*.swp
+*~
+
+# Archivos generados por la línea de comandos de dotnet
+dotnet.exe
+
+# Archivos de Mac
+.DS_Store
+
+# Archivos de IDEs de JetBrains como Rider
+.idea/
+.idea/*
+
+# Archivos de configuración de docker
+docker-compose.override.yml
