@@ -2,7 +2,8 @@
 [Bb]in/
 [Oo]bj/
 [Oo]ut/
-
+./EventsTrackerApi/bin
+./EventsTrackerApi/obj
 # Archivos del depurador de Visual Studio
 *.pdb
 *.exe
