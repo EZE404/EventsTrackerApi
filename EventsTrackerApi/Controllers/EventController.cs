@@ -6,26 +6,19 @@ namespace EventsTrackerApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class EventsController : ControllerBase
+    public class EventsController(IRepository<Event> eventRepository) : ControllerBase
     {
-        private readonly IRepository<Event> _eventRepository;
-
-        public EventsController(IRepository<Event> eventRepository)
-        {
-            _eventRepository = eventRepository;
-        }
-
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Event>>> GetEvents()
         {
-            var events = await _eventRepository.GetAllAsync();
+            var events = await eventRepository.GetAllAsync();
             return Ok(events);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Event>> GetEvent(int id)
         {
-            var evt = await _eventRepository.GetByIdAsync(id);
+            var evt = await eventRepository.GetByIdAsync(id);
             if (evt == null) return NotFound();
             return Ok(evt);
         }
@@ -33,22 +26,22 @@ namespace EventsTrackerApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Event>> CreateEvent(Event evt)
         {
-            await _eventRepository.AddAsync(evt);
+            await eventRepository.AddAsync(evt);
             return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateEvent(int id, Event evt)
         {
             if (id != evt.ID) return BadRequest();
-            await _eventRepository.UpdateAsync(evt);
+            await eventRepository.UpdateAsync(evt);
             return NoContent();
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEvent(int id)
         {
-            await _eventRepository.DeleteAsync(id);
+            await eventRepository.DeleteAsync(id);
             return NoContent();
         }
     }

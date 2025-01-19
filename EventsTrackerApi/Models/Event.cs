@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace EventsTrackerApi.Models
 {
@@ -19,6 +20,7 @@ namespace EventsTrackerApi.Models
         public int Status { get; set; }
 
         [ForeignKey("CreatorID")]
+        [JsonIgnore]
         public User Creator { get; set; }
 
 
