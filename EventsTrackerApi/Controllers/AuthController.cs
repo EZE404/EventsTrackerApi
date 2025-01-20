@@ -26,7 +26,12 @@ namespace EventsTrackerApi.Controllers
             }
 
             var token = GenerateJwtToken(user);
-            return Ok(new { Token = token });
+            return Ok(new { 
+                Token = token,
+                FirstName = user.FirstName,
+                Email = user.Email,
+                LastName = user.LastName
+             });
         }
 
 
