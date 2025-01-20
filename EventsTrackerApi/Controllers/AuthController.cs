@@ -13,21 +13,13 @@ namespace EventsTrackerApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController(IRepository<User> userRepository, IConfiguration configuration)
+        : ControllerBase
     {
-        private readonly IRepository<User> _userRepository;
-        private readonly IConfiguration _configuration;
-
-        public AuthController(IRepository<User> userRepository, IConfiguration configuration)
-        {
-            _userRepository = userRepository;
-            _configuration = configuration;
-        }
-
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDto userLogin)
         {
-            var user = (await _userRepository.FindAsync(u => u.Email == userLogin.Email)).FirstOrDefault();
+            var user = (await userRepository.FindAsync(u => u.Email == userLogin.Email)).FirstOrDefault();
             if (user == null || !BCrypt.Net.BCrypt.Verify(userLogin.Password, user.PasswordHash))
             {
                 return Unauthorized("Invalid credentials");
@@ -46,12 +38,12 @@ namespace EventsTrackerApi.Controllers
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException()));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
+                issuer: configuration["Jwt:Issuer"],
+                audience: configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.Now.AddHours(1),
                 signingCredentials: creds);
@@ -62,7 +54,7 @@ namespace EventsTrackerApi.Controllers
         [HttpPost("request-password-reset")]
         public async Task<IActionResult> RequestPasswordReset([FromBody] ChangePasswordRequestDto request)
         {
-            var user = (await _userRepository.FindAsync(u => u.Email == request.Email)).FirstOrDefault();
+            var user = (await userRepository.FindAsync(u => u.Email == request.Email)).FirstOrDefault();
             if (user == null) return NotFound("User not found.");
 
             var token = Guid.NewGuid().ToString(); // Token de restablecimiento
@@ -77,18 +69,16 @@ namespace EventsTrackerApi.Controllers
         private async Task SendResetEmail(string email, string resetLink)
         {
             var emailMessage = new MimeMessage();
-            emailMessage.From.Add(new MailboxAddress(_configuration["EmailSettings:SenderName"], _configuration["EmailSettings:SenderEmail"]));
+            emailMessage.From.Add(new MailboxAddress(configuration["EmailSettings:SenderName"], configuration["EmailSettings:SenderEmail"]));
             emailMessage.To.Add(new MailboxAddress("User", email));
             emailMessage.Subject = "Password Reset";
             emailMessage.Body = new TextPart("plain") { Text = $"Click here to reset your password: {resetLink}" };
 
-            using (var client = new SmtpClient())
-            {
-                await client.ConnectAsync(_configuration["EmailSettings:SmtpServer"], int.Parse(_configuration["EmailSettings:Port"]), false);
-                await client.AuthenticateAsync(_configuration["EmailSettings:SenderEmail"], _configuration["EmailSettings:Password"]);
-                await client.SendAsync(emailMessage);
-                await client.DisconnectAsync(true);
-            }
+            using var client = new SmtpClient();
+            await client.ConnectAsync(configuration["EmailSettings:SmtpServer"], int.Parse(configuration["EmailSettings:Port"] ?? throw new InvalidOperationException()), false);
+            await client.AuthenticateAsync(configuration["EmailSettings:SenderEmail"], configuration["EmailSettings:Password"]);
+            await client.SendAsync(emailMessage);
+            await client.DisconnectAsync(true);
         }
     }
 }
