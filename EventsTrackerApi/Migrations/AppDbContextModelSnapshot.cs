@@ -66,7 +66,7 @@ namespace EventsTrackerApi.Migrations
 
                     b.HasIndex("CreatorID");
 
-                    b.ToTable("Events");
+                    b.ToTable("Events", (string)null);
                 });
 
             modelBuilder.Entity("EventsTrackerApi.Models.EventInvitation", b =>
@@ -105,7 +105,7 @@ namespace EventsTrackerApi.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("EventInvitations");
+                    b.ToTable("EventInvitations", (string)null);
                 });
 
             modelBuilder.Entity("EventsTrackerApi.Models.EventPost", b =>
@@ -135,7 +135,7 @@ namespace EventsTrackerApi.Migrations
 
                     b.HasIndex("UserID");
 
-                    b.ToTable("EventPosts");
+                    b.ToTable("EventPosts", (string)null);
                 });
 
             modelBuilder.Entity("EventsTrackerApi.Models.User", b =>
@@ -169,12 +169,18 @@ namespace EventsTrackerApi.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("varchar(16)");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ResetToken")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ResetTokenExpires")
+                        .HasColumnType("datetime(6)");
 
                     b.HasKey("ID");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("EventsTrackerApi.Models.Event", b =>
