@@ -1,6 +1,7 @@
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Utils;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -66,24 +67,34 @@ namespace EventsTrackerApi.Controllers
             // Aquí almacenaríamos el token en la base de datos junto al usuario
 
             var resetLink = $"{Request.Scheme}://{Request.Host}/reset-password?token={token}";
-            await SendResetEmail(request.Email, resetLink);
+           
+            var mailOptions = new EmailOptions
+            {
+                From = "no-reply@yourdomain.com",
+                To = request.Email,
+                Subject = "Recuperación de Contraseña",
+                Body = Commons.HtmlBodyEmailRecoveryPassword("resetToken")
+            };
+            await SendResetEmail(mailOptions);
 
             return Ok("Password reset link sent to email.");
         }
 
-        private async Task SendResetEmail(string email, string resetLink)
+        private async Task SendResetEmail(EmailOptions mailOptions)
         {
             var emailMessage = new MimeMessage();
-            emailMessage.From.Add(new MailboxAddress(configuration["EmailSettings:SenderName"], configuration["EmailSettings:SenderEmail"]));
-            emailMessage.To.Add(new MailboxAddress("User", email));
-            emailMessage.Subject = "Password Reset";
-            emailMessage.Body = new TextPart("plain") { Text = $"Click here to reset your password: {resetLink}" };
+            emailMessage.From.Add(new MailboxAddress("Nombre del Remitente", mailOptions.From));
+            emailMessage.To.Add(new MailboxAddress("Nombre del Destinatario", mailOptions.To));
+            emailMessage.Subject = mailOptions.Subject;
+            emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = mailOptions.Body };
 
-            using var client = new SmtpClient();
-            await client.ConnectAsync(configuration["EmailSettings:SmtpServer"], int.Parse(configuration["EmailSettings:Port"] ?? throw new InvalidOperationException()), false);
-            await client.AuthenticateAsync(configuration["EmailSettings:SenderEmail"], configuration["EmailSettings:Password"]);
-            await client.SendAsync(emailMessage);
-            await client.DisconnectAsync(true);
+            using (var client = new SmtpClient())
+            {
+                await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
+                await client.AuthenticateAsync("paulocabrera90@gmail.com", "yfdmodmdjjkharju");
+                await client.SendAsync(emailMessage);
+                await client.DisconnectAsync(true);
+            }
         }
     }
 }
