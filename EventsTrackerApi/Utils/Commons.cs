@@ -54,7 +54,7 @@ public class Commons
         <body>
             <div class='email-body'>
                 <div class='email-content'>
-                    <h2>Recuperación de Contraseña Inmobiliaria Cabrera</h2>
+                    <h2>Recuperación de Contraseña Events Tracker</h2>
                     <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Por favor, usa el siguiente código de verificación para restablecer tu contraseña:</p>
                     <h3 class='verification-number'>{verificationNumber}</h3>
                     <p>Si no solicitaste restablecer tu contraseña, por favor ignora este correo electrónico. Tu cuenta sigue siendo segura y no se ha realizado ningún cambio.</p>

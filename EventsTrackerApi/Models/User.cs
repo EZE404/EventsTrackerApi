@@ -21,6 +21,8 @@ namespace EventsTrackerApi.Models
         public string PasswordHash { get; set; }
         public string? AvatarUrl { get; set; }
         public string? Bio { get; set; }
+        public string? ResetToken { get; set;}
+        public DateTime? ResetTokenExpires { get; set;}
 
         // Relaciones
         public ICollection<Event> CreatedEvents { get; set; } = [];
