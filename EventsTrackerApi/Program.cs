@@ -20,6 +20,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ServerVersion.Parse("8.0.30")
     ));
 
+builder.WebHost.UseUrls("http://*:5000");
 // Configuración de JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -94,17 +95,22 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        policy =>
-        {
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
-        });
-});
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("AllowAll",
+//         policy =>
+//         {
+//             policy.AllowAnyOrigin()
+//                   .AllowAnyMethod()
+//                   .AllowAnyHeader();
+//         });
+// });
 var app = builder.Build();
+
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
 // Configuración de middleware
 if (app.Environment.IsDevelopment())
@@ -119,7 +125,7 @@ if (app.Environment.IsDevelopment())
 }
 app.UseStaticFiles();
 app.UseRouting();
-//app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
