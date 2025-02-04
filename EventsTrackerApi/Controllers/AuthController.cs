@@ -1,5 +1,6 @@
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Utils;
 using MailKit.Net.Smtp;
@@ -33,9 +34,7 @@ namespace EventsTrackerApi.Controllers
             var token = GenerateJwtToken(user);
             return Ok(new { 
                 Token = token,
-                FirstName = user.FirstName,
-                Email = user.Email,
-                LastName = user.LastName
+                Data = UserMapper.ToMapper(user)
              });
         }
 
@@ -99,7 +98,7 @@ namespace EventsTrackerApi.Controllers
             }
         }
 
-        [HttpPost("request-password-reset")]
+        [HttpPost("reset-password")]
         public async Task<IActionResult> RequestPasswordReset([FromBody] ChangePasswordRequestDto request)
         {
             var user = (await userRepository.FindAsync(u => u.Email == request.Email)).FirstOrDefault();
@@ -151,7 +150,7 @@ namespace EventsTrackerApi.Controllers
             }
         }
 
-        [HttpPost("changePassword")]
+        [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordView changePasswordView)
         {
