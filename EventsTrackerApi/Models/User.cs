@@ -1,8 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventsTrackerApi.Models
 {
+    [Index(nameof(Email), IsUnique = true)]
+    [Index(nameof(Dni), IsUnique = true)]
     public class User
     {
         [Key]

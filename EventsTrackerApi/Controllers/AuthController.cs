@@ -11,6 +11,7 @@ using MimeKit;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Google.Apis.Auth;
 
 namespace EventsTrackerApi.Controllers
 {
@@ -173,6 +174,54 @@ namespace EventsTrackerApi.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpPost("google")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.IdToken))
+                return BadRequest("El idToken es obligatorio.");
+
+            GoogleJsonWebSignature.Payload payload;
+            try
+            {
+                // Valida el idToken de Google
+                payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized("Token de Google inválido: " + ex.Message);
+            }
+
+           
+            string newToken = GenerateJwtTokenGoogle(payload.Email);
+
+            // Retorna el token nuevo
+            return Ok(new { token = newToken });
+        
+        }
+
+         private string GenerateJwtTokenGoogle(string email)
+        {
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, email),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] 
+                ?? throw new InvalidOperationException("Falta la configuración de Jwt:Key")));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: configuration["Jwt:Issuer"],
+                audience: configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddHours(1),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         private async Task SendResetEmail(EmailOptions mailOptions)
