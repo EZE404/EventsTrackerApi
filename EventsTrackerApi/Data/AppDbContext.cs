@@ -17,6 +17,10 @@ namespace EventsTrackerApi.Data
 
             // Configurar las relaciones entre User y EventInvitation
 
+           // modelBuilder.HasSequence<int>("DniSequence")
+            //    .StartsAt(1)
+            //    .IncrementsBy(1);
+
             modelBuilder.Entity<EventInvitation>()
                 .HasOne(ei => ei.User)
                 .WithMany(u => u.ReceivedInvitations)
@@ -31,50 +35,9 @@ namespace EventsTrackerApi.Data
 
             modelBuilder.Entity<EventInvitation>()
                 .HasOne(ei => ei.Event)
-                .WithMany(e => e.Invitations) // Agrega ICollection<EventInvitation> Invitations en Event si aún no lo has hecho
+                .WithMany(e => e.Invitations)
                 .HasForeignKey(ei => ei.EventID)
                 .OnDelete(DeleteBehavior.Cascade);
         }
-
-        /*
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            // Configuración de las relaciones de Event
-            modelBuilder.Entity<Event>() // Con user creador
-                .HasOne(e => e.Creator)
-                .WithMany(u => u.CreatedEvents)
-                .HasForeignKey(e => e.CreatorID)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            // Configuración de las relaciones de EventInvitation
-            modelBuilder.Entity<EventInvitation>() // Con Event
-                .HasOne(ei => ei.Event)
-                .WithMany(e => e.Invitations)
-                .HasForeignKey(ei => ei.EventID);
-
-            modelBuilder.Entity<EventInvitation>() // Con User invitado
-                .HasOne(ei => ei.User)
-                .WithMany(u => u.ReceivedInvitations)
-                .HasForeignKey(ei => ei.UserID);
-
-            modelBuilder.Entity<EventInvitation>() // Con User creador
-                .HasOne(ei => ei.User)
-                .WithMany(u => u.CreatedInvitations)
-                .HasForeignKey(ei => ei.CreatorID);
-
-            // Configuración de las relaciones de EventPost
-            modelBuilder.Entity<EventPost>()
-                .HasOne(ep => ep.Event)
-                .WithMany(e => e.Posts)
-                .HasForeignKey(ep => ep.EventID);
-
-            modelBuilder.Entity<EventPost>()
-                .HasOne(ep => ep.User)
-                .WithMany(u => u.Posts)
-                .HasForeignKey(ep => ep.UserID);
-        }
-        */
     }
 }

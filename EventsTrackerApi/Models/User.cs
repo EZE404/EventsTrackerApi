@@ -26,9 +26,9 @@ namespace EventsTrackerApi.Models
         public string? ResetToken { get; set;}
         public int Estado { get; set; } = 1;
 
-        [Required(ErrorMessage = "El documento es obligatorio.")]
-        [RegularExpression(@"^\d{7,8}$", ErrorMessage = "El documento debe tener 7 u 8 dígitos.")]
-        public string Dni { get; set; }        
+      //  [Required(ErrorMessage = "El documento es obligatorio.")]
+       // [RegularExpression(@"^\d{7,8}$", ErrorMessage = "El documento debe tener 7 u 8 dígitos.")]
+        public string? Dni { get; set; }        
 
         [Required(ErrorMessage = "El correo electrónico es obligatorio.")]
         [EmailAddress(ErrorMessage = "El correo electrónico no es válido.")]
@@ -46,6 +46,8 @@ namespace EventsTrackerApi.Models
 
         [Column("Fecha_Actualizacion")]
         public DateTime FechaActualizacion { get; set; }
+        
+        public int FlagUpdateData { get; set; } = 1;
 
         // Relaciones
         public ICollection<Event> CreatedEvents { get; set; } = [];
