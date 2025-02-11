@@ -1,4 +1,5 @@
 using EventsTrackerApi.Data;
+using EventsTrackerApi.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
@@ -40,9 +41,14 @@ namespace EventsTrackerApi.Repositories
             }
         }
 
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        IQueryable<T> IRepository<T>.FindAsync(Expression<Func<T, bool>> predicate)
         {
-            return await _context.Set<T>().Where(predicate).ToListAsync();
+            return _context.Set<T>().Where(predicate);
+        }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == email);
         }
     }
 }

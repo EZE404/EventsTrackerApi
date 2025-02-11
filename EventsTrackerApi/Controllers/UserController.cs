@@ -1,16 +1,27 @@
+using System.Net.Mail;
+using EventsTrackerApi.Data;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MimeKit;
 
 namespace EventsTrackerApi.Controllers;
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
-public class UsersController(IRepository<User> userRepository, IRepository<Event> eventRepository)
+public class UsersController(
+    IRepository<User> userRepository,
+                            IRepository<Event> eventRepository,
+                            AppDbContext dbContext,
+                            IConfiguration configuration
+    )
     : ControllerBase
-{
+{   
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
@@ -29,7 +40,25 @@ public class UsersController(IRepository<User> userRepository, IRepository<Event
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
-        user.PasswordHash = Utils.Commons.CreatePasswordHash(user.PasswordHash);
+        var password = user.PasswordHash;
+        user.PasswordHash = Utils.Commons.CreatePasswordHash(password);
+        user.Dni ??= (await GetNextDniAsync(dbContext)).ToString();
+        user.FechaCreacion = DateTime.UtcNow;
+        user.FechaActualizacion = DateTime.UtcNow;
+
+        if (user.FlagUpdateData != 0)
+        {
+            //TODO: Actualizar los datos del usuario - Avisando Email al usuario
+            var mailOptions = new EmailOptions
+            {
+                From = "no-reply@yourdomain.com",
+                To = user.Email,
+                Subject = "Actualizar los datos del usuario",
+                Body = Commons.HtmlBodyEmailUserDataChange(user.FirstName, user.Dni, password)
+            };
+            await SendResetEmail(mailOptions);
+        }
+
         await userRepository.AddAsync(user);
         return CreatedAtAction(nameof(GetUser), new { id = user.ID }, user);
     }
@@ -87,6 +116,47 @@ public class UsersController(IRepository<User> userRepository, IRepository<Event
         await eventRepository.UpdateAsync(evt);
 
         return Ok("Cover photo uploaded successfully.");
+    }
+
+    [HttpGet("find-by-email/{email}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<User>> GetUserByEmail(string email)
+    {
+        var user = await userRepository.GetByEmailAsync(email);
+        if (user == null)
+            return NotFound();
+        return Ok(user);
+    }
+    private static async Task<int> GetNextDniAsync(AppDbContext dbContext)
+    {
+        // Obtiene la conexión subyacente del contexto
+        var connection = dbContext.Database.GetDbConnection();
+        await connection.OpenAsync();
+
+        using (var command = connection.CreateCommand())
+        {
+            // Ejecuta la consulta para obtener el siguiente valor de la secuencia.
+            command.CommandText = "SELECT NEXT VALUE FOR eventstracker.DniSequence";
+            var result = await command.ExecuteScalarAsync();
+
+            // Convierte el resultado a entero
+            return Convert.ToInt32(result);
+        }
+    }
+
+    public async Task SendResetEmail(EmailOptions mailOptions)
+    {
+        var emailMessage = new MimeMessage();
+        emailMessage.From.Add(new MailboxAddress("Nombre del Remitente", mailOptions.From));
+        emailMessage.To.Add(new MailboxAddress("Nombre del Destinatario", mailOptions.To));
+        emailMessage.Subject = mailOptions.Subject;
+        emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = mailOptions.Body };
+
+        using var client = new MailKit.Net.Smtp.SmtpClient();
+        await client.ConnectAsync(configuration["EmailSettings:SmtpServer"], int.Parse(configuration["EmailSettings:Port"] ?? throw new InvalidOperationException()), false);
+        await client.AuthenticateAsync(configuration["EmailSettings:SenderEmail"], configuration["EmailSettings:Password"]);
+        await client.SendAsync(emailMessage);
+        await client.DisconnectAsync(true);
     }
 
 }
