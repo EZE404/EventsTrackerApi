@@ -121,7 +121,7 @@ public class AuthController(
             Subject = "Recuperación de Contraseña",
             Body = Commons.HtmlBodyEmailRecoveryPassword(resetToken)
         };
-        await SendResetEmail(mailOptions);
+        await SenderEmail.SendResetEmail(mailOptions, configuration);
 
         return Ok("Password reset link sent to email.");
     }
@@ -201,6 +201,7 @@ public class AuthController(
         return Ok(new { token = newToken });
 
     }
+    [NonAction]
 
     private string GenerateJwtTokenGoogle(string email)
     {
@@ -222,21 +223,6 @@ public class AuthController(
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    public async Task SendResetEmail(EmailOptions mailOptions)
-    {
-        var emailMessage = new MimeMessage();
-        emailMessage.From.Add(new MailboxAddress("Nombre del Remitente", mailOptions.From));
-        emailMessage.To.Add(new MailboxAddress("Nombre del Destinatario", mailOptions.To));
-        emailMessage.Subject = mailOptions.Subject;
-        emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = mailOptions.Body };
-
-        using var client = new SmtpClient();
-        await client.ConnectAsync(configuration["EmailSettings:SmtpServer"], int.Parse(configuration["EmailSettings:Port"] ?? throw new InvalidOperationException()), false);
-        await client.AuthenticateAsync(configuration["EmailSettings:SenderEmail"], configuration["EmailSettings:Password"]);
-        await client.SendAsync(emailMessage);
-        await client.DisconnectAsync(true);
     }
 }
 

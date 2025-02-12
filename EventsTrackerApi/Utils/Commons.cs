@@ -1,3 +1,6 @@
+using EventsTrackerApi.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace EventsTrackerApi.Utils;
 
 public class Commons
@@ -21,6 +24,23 @@ public class Commons
     {
         return new Random().Next(100000, 999999);
     }
+
+    public static async Task<int> GetNextDniAsync(AppDbContext dbContext)
+        {
+            // Obtiene la conexión subyacente del contexto
+            var connection = dbContext.Database.GetDbConnection();
+            await connection.OpenAsync();
+
+            using (var command = connection.CreateCommand())
+            {
+                // Ejecuta la consulta para obtener el siguiente valor de la secuencia.
+                command.CommandText = "SELECT NEXT VALUE FOR eventstracker.DniSequence";
+                var result = await command.ExecuteScalarAsync();
+
+                // Convierte el resultado a entero
+                return Convert.ToInt32(result);
+            }
+        }
 
 
     public static string HtmlBodyEmailRecoveryPassword(string verificationNumber)

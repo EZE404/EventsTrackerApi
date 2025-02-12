@@ -29,6 +29,6 @@ namespace EventsTrackerApi.Repositories
             }
 
             return (status);
-        }
+        }        
     }
 }
