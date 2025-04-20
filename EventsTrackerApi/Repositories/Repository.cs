@@ -25,20 +25,49 @@ namespace EventsTrackerApi.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(T entity)
+        public async Task<User> UpdateAsync(T entity)
         {
+            if (entity is User userUpdate)
+            {
+                var existingUser = await _context.Users.FindAsync(userUpdate.ID);
+                if (existingUser == null)
+                    throw new Exception("El usuario no existe.");
+
+                var excludedProps = new[] { "ID", "FechaCreacion" };
+                var properties = typeof(User).GetProperties();
+
+                foreach (var prop in properties)
+                {
+                    if (excludedProps.Contains(prop.Name)) continue;
+
+                    var newValue = prop.GetValue(userUpdate);
+                    if (newValue != null)
+                    {
+                        prop.SetValue(existingUser, newValue);
+                    }
+                }
+
+                existingUser.FechaActualizacion = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                return existingUser;
+            }
+
             _context.Set<T>().Update(entity);
             await _context.SaveChangesAsync();
+            return null;
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id)
         {
             var entity = await GetByIdAsync(id);
             if (entity != null)
             {
                 _context.Set<T>().Remove(entity);
                 await _context.SaveChangesAsync();
+                return true;
             }
+            return false;
         }
 
         IQueryable<T> IRepository<T>.FindAsync(Expression<Func<T, bool>> predicate)

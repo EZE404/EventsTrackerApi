@@ -9,8 +9,8 @@ namespace EventsTrackerApi.Repositories
         Task<T?> GetByIdAsync(int id);
         Task<User?> GetByEmailAsync(string email);
         Task AddAsync(T entity);
-        Task UpdateAsync(T entity);
-        Task DeleteAsync(int id);
+        Task<User?> UpdateAsync(T entity);
+        Task<bool> DeleteAsync(int id);
         IQueryable<T> FindAsync(Expression<Func<T, bool>> predicate);
     }
 }

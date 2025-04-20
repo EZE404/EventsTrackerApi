@@ -1,29 +1,32 @@
+using EventsTrackerApi.Controllers.response;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Mysqlx.Crud;
 
 namespace EventsTrackerApi.Controllers;
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 public class UsersController(
-    IRepository<User> userRepository,
-                            IRepository<Event> eventRepository,
-                            AppDbContext dbContext,
-                            IConfiguration configuration
+                IRepository<User> userRepository,
+                IRepository<Event> eventRepository,
+                AppDbContext dbContext,
+                IConfiguration configuration
     )
     : ControllerBase
-{   
+{
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
         var users = await userRepository.GetAllAsync();
-        return Ok(users);
+        return Ok(users.Select(UserMapper.ToMapper));
     }
 
     [HttpGet("{id:int}")]
@@ -31,7 +34,7 @@ public class UsersController(
     {
         var user = await userRepository.GetByIdAsync(id);
         if (user == null) return NotFound();
-        return Ok(user);
+        return Ok(UserMapper.ToMapper(user));
     }
 
     [HttpPost]
@@ -45,7 +48,6 @@ public class UsersController(
 
         if (user.FlagUpdateData != 0)
         {
-            //TODO: Actualizar los datos del usuario - Avisando Email al usuario
             var mailOptions = new EmailOptions
             {
                 From = "no-reply@yourdomain.com",
@@ -53,26 +55,55 @@ public class UsersController(
                 Subject = "Actualizar los datos del usuario",
                 Body = Commons.HtmlBodyEmailUserDataChange(user.FirstName, user.Dni, password)
             };
-            await  SenderEmail.SendResetEmail(mailOptions, configuration);
+            await SenderEmail.SendResetEmail(mailOptions, configuration);
         }
 
         await userRepository.AddAsync(user);
         return CreatedAtAction(nameof(GetUser), new { id = user.ID }, user);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateUser(int id, User user)
+    [HttpPatch("{id:int}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] User userUpdate)
     {
-        if (id != user.ID) return BadRequest();
-        await userRepository.UpdateAsync(user);
-        return NoContent();
+        if (id != userUpdate.ID) return BadRequest(new
+        {
+            status = "error",
+            message = "User ID mismatch."
+        });
+
+        try
+        {
+            User? user = await userRepository.UpdateAsync(userUpdate);
+            return Ok(new
+            {
+                status = "success",
+                message = $"User with ID {id} updated successfully.",
+                data = UserMapper.ToMapper(user)
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                status = "error",
+                message = ex.Message
+            });
+        }
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        await userRepository.DeleteAsync(id);
-        return NoContent();
+        var deleted = await userRepository.DeleteAsync(id);
+
+        if (!deleted)
+            return NotFound(new { message = $"User with ID {id} not found." });
+
+        return Ok(new
+        {
+            status = "success",
+            message = $"User with ID {id} deleted successfully."
+        });
     }
 
     [HttpPost("{id:int}/upload-profile-photo")]
@@ -121,8 +152,17 @@ public class UsersController(
     {
         var user = await userRepository.GetByEmailAsync(email);
         if (user == null)
-            return NotFound();
-        return Ok(user);
+            return BadRequest(new
+            {
+                status = "error",
+                message = "User not found."
+            });
+
+        return Ok(new
+        {
+            status = "success",
+            data = user
+        });
     }
 }
 
