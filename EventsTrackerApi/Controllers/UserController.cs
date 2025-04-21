@@ -1,32 +1,32 @@
-using System.Net.Mail;
+using EventsTrackerApi.Controllers.response;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MimeKit;
+using Mysqlx.Crud;
 
 namespace EventsTrackerApi.Controllers;
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 public class UsersController(
-    IRepository<User> userRepository,
-                            IRepository<Event> eventRepository,
-                            AppDbContext dbContext,
-                            IConfiguration configuration
+                IRepository<User> userRepository,
+                IRepository<Event> eventRepository,
+                AppDbContext dbContext,
+                IConfiguration configuration
     )
     : ControllerBase
-{   
+{
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
         var users = await userRepository.GetAllAsync();
-        return Ok(users);
+        return Ok(users.Select(UserMapper.ToMapper));
     }
 
     [HttpGet("{id:int}")]
@@ -34,21 +34,20 @@ public class UsersController(
     {
         var user = await userRepository.GetByIdAsync(id);
         if (user == null) return NotFound();
-        return Ok(user);
+        return Ok(UserMapper.ToMapper(user));
     }
 
     [HttpPost]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
         var password = user.PasswordHash;
-        user.PasswordHash = Utils.Commons.CreatePasswordHash(password);
-        user.Dni ??= (await GetNextDniAsync(dbContext)).ToString();
+        user.PasswordHash = Commons.CreatePasswordHash(password);
+        user.Dni ??= (await Commons.GetNextDniAsync(dbContext)).ToString();
         user.FechaCreacion = DateTime.UtcNow;
         user.FechaActualizacion = DateTime.UtcNow;
 
         if (user.FlagUpdateData != 0)
         {
-            //TODO: Actualizar los datos del usuario - Avisando Email al usuario
             var mailOptions = new EmailOptions
             {
                 From = "no-reply@yourdomain.com",
@@ -56,26 +55,55 @@ public class UsersController(
                 Subject = "Actualizar los datos del usuario",
                 Body = Commons.HtmlBodyEmailUserDataChange(user.FirstName, user.Dni, password)
             };
-            await SendResetEmail(mailOptions);
+            await SenderEmail.SendResetEmail(mailOptions, configuration);
         }
 
         await userRepository.AddAsync(user);
         return CreatedAtAction(nameof(GetUser), new { id = user.ID }, user);
     }
 
-    [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateUser(int id, User user)
+    [HttpPatch("{id:int}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] User userUpdate)
     {
-        if (id != user.ID) return BadRequest();
-        await userRepository.UpdateAsync(user);
-        return NoContent();
+        if (id != userUpdate.ID) return BadRequest(new
+        {
+            status = "error",
+            message = "User ID mismatch."
+        });
+
+        try
+        {
+            User? user = await userRepository.UpdateAsync(userUpdate);
+            return Ok(new
+            {
+                status = "success",
+                message = $"User with ID {id} updated successfully.",
+                data = UserMapper.ToMapper(user)
+            });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new
+            {
+                status = "error",
+                message = ex.Message
+            });
+        }
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        await userRepository.DeleteAsync(id);
-        return NoContent();
+        var deleted = await userRepository.DeleteAsync(id);
+
+        if (!deleted)
+            return NotFound(new { message = $"User with ID {id} not found." });
+
+        return Ok(new
+        {
+            status = "success",
+            message = $"User with ID {id} deleted successfully."
+        });
     }
 
     [HttpPost("{id:int}/upload-profile-photo")]
@@ -124,40 +152,17 @@ public class UsersController(
     {
         var user = await userRepository.GetByEmailAsync(email);
         if (user == null)
-            return NotFound();
-        return Ok(user);
-    }
-    private static async Task<int> GetNextDniAsync(AppDbContext dbContext)
-    {
-        // Obtiene la conexión subyacente del contexto
-        var connection = dbContext.Database.GetDbConnection();
-        await connection.OpenAsync();
+            return BadRequest(new
+            {
+                status = "error",
+                message = "User not found."
+            });
 
-        using (var command = connection.CreateCommand())
+        return Ok(new
         {
-            // Ejecuta la consulta para obtener el siguiente valor de la secuencia.
-            command.CommandText = "SELECT NEXT VALUE FOR eventstracker.DniSequence";
-            var result = await command.ExecuteScalarAsync();
-
-            // Convierte el resultado a entero
-            return Convert.ToInt32(result);
-        }
+            status = "success",
+            data = user
+        });
     }
-
-    public async Task SendResetEmail(EmailOptions mailOptions)
-    {
-        var emailMessage = new MimeMessage();
-        emailMessage.From.Add(new MailboxAddress("Nombre del Remitente", mailOptions.From));
-        emailMessage.To.Add(new MailboxAddress("Nombre del Destinatario", mailOptions.To));
-        emailMessage.Subject = mailOptions.Subject;
-        emailMessage.Body = new TextPart(MimeKit.Text.TextFormat.Html) { Text = mailOptions.Body };
-
-        using var client = new MailKit.Net.Smtp.SmtpClient();
-        await client.ConnectAsync(configuration["EmailSettings:SmtpServer"], int.Parse(configuration["EmailSettings:Port"] ?? throw new InvalidOperationException()), false);
-        await client.AuthenticateAsync(configuration["EmailSettings:SenderEmail"], configuration["EmailSettings:Password"]);
-        await client.SendAsync(emailMessage);
-        await client.DisconnectAsync(true);
-    }
-
 }
 
