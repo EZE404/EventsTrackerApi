@@ -14,7 +14,7 @@ namespace EventsTrackerApi.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 public class UsersController(
-                IRepository<User> userRepository,
+                IUserRepository userRepository,
                 IRepository<Event> eventRepository,
                 AppDbContext dbContext,
                 IConfiguration configuration
@@ -62,23 +62,38 @@ public class UsersController(
         return CreatedAtAction(nameof(GetUser), new { id = user.ID }, user);
     }
 
-    [HttpPatch("{id:int}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] User userUpdate)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser( [FromBody] User userUpdate)
     {
+        int id = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
+        var userExists = await userRepository.GetByIdAsync(id);
+
         if (id != userUpdate.ID) return BadRequest(new
         {
             status = "error",
-            message = "User ID mismatch."
+            message = "User not found."
         });
+
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        if (!TryValidateModel(userExists))
+        {
+            return BadRequest(ModelState);
+        }
 
         try
         {
-            User? user = await userRepository.UpdateAsync(userUpdate);
+           // User? user = await userRepository.UpdateAsync(userUpdate);
+            userExists = await userRepository.ApplyChanges(userExists, userUpdate);
+            await userRepository.UpdateUserAsync(userExists);
             return Ok(new
             {
                 status = "success",
                 message = $"User with ID {id} updated successfully.",
-                data = UserMapper.ToMapper(user)
+                data = UserMapper.ToMapper(userExists)
             });
         }
         catch (Exception ex)

@@ -39,6 +39,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Registro de repositorios para inyección de dependencias
 builder.Services.AddScoped<IRepository<User>, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRepository<Event>, EventRepository>();
 // Añadir más repositorios según sea necesario (por lo del email)
 
