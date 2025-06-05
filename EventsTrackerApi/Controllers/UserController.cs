@@ -71,7 +71,7 @@ public class UsersController(
         if (id != userUpdate.ID) return BadRequest(new
         {
             status = "error",
-            message = "User not found."
+            message = "No posee permisos."
         });
 
         if (!ModelState.IsValid)
