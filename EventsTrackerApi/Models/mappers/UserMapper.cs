@@ -18,6 +18,8 @@ public class UserMapper
             Direccion = user.Direccion,
             FechaCreacion = user.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss"),
             FechaActualizacion = user.FechaActualizacion.ToString("yyyy-MM-ddTHH:mm:ss"),
+            TelefonoArea = user.TelefonoArea,
+            TelefonoNumero = user.TelefonoNumero
         };
     }
 }

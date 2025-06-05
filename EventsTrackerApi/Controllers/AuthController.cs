@@ -41,12 +41,14 @@ public class AuthController(
     }
 
 
-    private string GenerateJwtToken(User user)
+    private string GenerateJwtToken(User user) 
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim("Id_user", user.ID.ToString()),
+                new Claim("FullName", user.NombreCompleto()),
             };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"] ?? throw new InvalidOperationException()));

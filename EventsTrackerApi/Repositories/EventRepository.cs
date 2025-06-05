@@ -6,6 +6,11 @@ namespace EventsTrackerApi.Repositories
 {
     public class EventRepository(AppDbContext context) : Repository<Event>(context)
     {
-        // Agrega métodos específicos para la entidad Event si es necesario
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == email);
+        }
     }
+
+    
 }
