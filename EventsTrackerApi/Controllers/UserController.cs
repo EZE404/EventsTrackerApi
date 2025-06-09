@@ -167,7 +167,7 @@ public class UsersController(
     {
         var user = await userRepository.GetByEmailAsync(email);
         if (user == null)
-            return BadRequest(new
+            return NotFound(new
             {
                 status = "error",
                 message = "User not found."

@@ -1,5 +1,6 @@
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventsTrackerApi.Repositories
@@ -97,5 +98,5 @@ namespace EventsTrackerApi.Repositories
 
             return existingUser;
         }
-    }
+    }    
 }
