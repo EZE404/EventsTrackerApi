@@ -13,8 +13,14 @@ using System.Security.Claims;
 using System.Text;
 using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
+using Google.Cloud.RecaptchaEnterprise.V1;
+using Google.Apis.Auth.OAuth2;
+using Grpc.Auth;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 
 namespace EventsTrackerApi.Controllers;
+
 [Route("api/[controller]")]
 [ApiController]
 public class AuthController(
@@ -23,6 +29,9 @@ public class AuthController(
     )
     : ControllerBase
 {
+    private readonly string projectId = "eventstracker-c25d6";
+    private readonly string siteKey = "6Ldzi2srAAAAAEjfdihAQuIMcrude2r891D1idQE";
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto userLogin)
     {
@@ -41,7 +50,7 @@ public class AuthController(
     }
 
 
-    private string GenerateJwtToken(User user) 
+    private string GenerateJwtToken(User user)
     {
         var claims = new List<Claim>
         {
@@ -203,8 +212,8 @@ public class AuthController(
         return Ok(new { token = newToken });
 
     }
-    [NonAction]
 
+    [NonAction]
     private string GenerateJwtTokenGoogle(string email)
     {
         var claims = new[]

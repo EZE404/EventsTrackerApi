@@ -1,5 +1,7 @@
+using System.ComponentModel.DataAnnotations;
 using EventsTrackerApi.Controllers.response;
 using EventsTrackerApi.Data;
+using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
@@ -10,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using Mysqlx.Crud;
 
 namespace EventsTrackerApi.Controllers;
+
 [Route("api/[controller]")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
@@ -37,7 +40,9 @@ public class UsersController(
         return Ok(UserMapper.ToMapper(user));
     }
 
+
     [HttpPost]
+    [AllowAnonymous]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
         var password = user.PasswordHash;
@@ -63,7 +68,7 @@ public class UsersController(
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser( [FromBody] User userUpdate)
+    public async Task<IActionResult> UpdateUser([FromBody] User userUpdate)
     {
         int id = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
         var userExists = await userRepository.GetByIdAsync(id);
@@ -86,7 +91,7 @@ public class UsersController(
 
         try
         {
-           // User? user = await userRepository.UpdateAsync(userUpdate);
+            // User? user = await userRepository.UpdateAsync(userUpdate);
             userExists = await userRepository.ApplyChanges(userExists, userUpdate);
             await userRepository.UpdateUserAsync(userExists);
             return Ok(new
@@ -161,16 +166,16 @@ public class UsersController(
         return Ok("Cover photo uploaded successfully.");
     }
 
-    [HttpGet("find-by-email/{email}")]
+    [HttpGet("find-by-email")]
     [AllowAnonymous]
-    public async Task<ActionResult<User>> GetUserByEmail(string email)
+    public async Task<ActionResult<User>> GetUserByEmail([FromQuery][EmailAddress] string email)
     {
         var user = await userRepository.GetByEmailAsync(email);
         if (user == null)
             return NotFound(new
             {
-                status = "error",
-                message = "User not found."
+                status = "error",                
+                exist = false
             });
 
         return Ok(new
@@ -178,6 +183,21 @@ public class UsersController(
             status = "success",
             data = user
         });
+    }
+
+    [HttpGet("exist-email")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ExistEmailDto>> GetExistEmail([FromQuery][EmailAddress] string email)
+    {
+         var user = await userRepository.GetByEmailAsync(email);
+
+        var existEmailDto = new ExistEmailDto
+        {
+            Status = "success",
+            Exist = user != null
+        };
+
+        return Ok(existEmailDto);
     }
 }
 
