@@ -24,6 +24,7 @@ public class UsersController(
     )
     : ControllerBase
 {
+    private readonly int IS_HOST = 1;
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
@@ -48,7 +49,7 @@ public class UsersController(
         var password = user.PasswordHash;
         user.PasswordHash = Commons.CreatePasswordHash(password);
         user.Dni ??= (await Commons.GetNextDniAsync(dbContext)).ToString();
-        user.FechaCreacion = DateTime.UtcNow;
+        user.IsHost = IS_HOST;
         user.FechaActualizacion = DateTime.UtcNow;
 
         if (user.FlagUpdateData != 0)
@@ -200,4 +201,3 @@ public class UsersController(
         return Ok(existEmailDto);
     }
 }
-
