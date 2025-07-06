@@ -24,6 +24,7 @@ public class UsersController(
     )
     : ControllerBase
 {
+    private readonly int IS_HOST = 1;
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
@@ -48,7 +49,7 @@ public class UsersController(
         var password = user.PasswordHash;
         user.PasswordHash = Commons.CreatePasswordHash(password);
         user.Dni ??= (await Commons.GetNextDniAsync(dbContext)).ToString();
-        user.FechaCreacion = DateTime.UtcNow;
+        user.IsHost = IS_HOST;
         user.FechaActualizacion = DateTime.UtcNow;
 
         if (user.FlagUpdateData != 0)
@@ -167,37 +168,54 @@ public class UsersController(
     }
 
     [HttpGet("find-by-email")]
-    [AllowAnonymous]
     public async Task<ActionResult<User>> GetUserByEmail([FromQuery][EmailAddress] string email)
     {
-        var user = await userRepository.GetByEmailAsync(email);
-        if (user == null)
-            return NotFound(new
-            {
-                status = "error",                
-                exist = false
-            });
-
-        return Ok(new
+        try
         {
-            status = "success",
-            data = user
-        });
+            var user = await userRepository.GetByEmailAsync(email);
+
+            if (user == null) return NotFound("User not found.");
+
+            return Ok(new
+            {
+                status = "success",
+                data = user
+            });
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new
+            {
+                status = "error",
+                message = "Error access database"
+            });
+        }
     }
+
 
     [HttpGet("exist-email")]
     [AllowAnonymous]
     public async Task<ActionResult<ExistEmailDto>> GetExistEmail([FromQuery][EmailAddress] string email)
     {
-         var user = await userRepository.GetByEmailAsync(email);
-
-        var existEmailDto = new ExistEmailDto
+        try
         {
-            Status = "success",
-            Exist = user != null
-        };
+            var user = await userRepository.GetByEmailAsync(email);
 
-        return Ok(existEmailDto);
+            var existEmailDto = new ExistEmailDto
+            {
+                Status = "success",
+                Exist = user != null
+            };
+
+            return Ok(existEmailDto);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, new
+            {
+                status = "error",
+                message = "Error access database"
+            });
+        }
     }
 }
-

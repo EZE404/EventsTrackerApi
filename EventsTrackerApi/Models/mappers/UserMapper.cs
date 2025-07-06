@@ -19,7 +19,8 @@ public class UserMapper
             FechaCreacion = user.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss"),
             FechaActualizacion = user.FechaActualizacion.ToString("yyyy-MM-ddTHH:mm:ss"),
             TelefonoArea = user.TelefonoArea,
-            TelefonoNumero = user.TelefonoNumero
+            TelefonoNumero = user.TelefonoNumero,
+            IsHost = user.IsHost
         };
     }
 }

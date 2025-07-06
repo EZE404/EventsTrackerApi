@@ -12,4 +12,5 @@ public class UserResponse
     public string FechaActualizacion { get; set; }
     public string TelefonoArea { get; set; }
     public string TelefonoNumero { get; set; }
+    public int IsHost { get; set; }
 }
