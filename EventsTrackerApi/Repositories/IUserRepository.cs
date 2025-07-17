@@ -10,5 +10,7 @@ public interface IUserRepository : IRepository<User>
     Task<bool> VerifyNumberStatusAsync(string email, string verificationNumber);
     Task<bool> UserExists(int id);
     Task<User> ApplyChanges(User existingUser, User user);
+    Task<int> GetLastUserIdAsync();
+
 }
 

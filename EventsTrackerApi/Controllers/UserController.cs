@@ -20,7 +20,8 @@ public class UsersController(
                 IUserRepository userRepository,
                 IRepository<Event> eventRepository,
                 AppDbContext dbContext,
-                IConfiguration configuration
+                IConfiguration configuration,
+                ILogger<UsersController> _logger
     )
     : ControllerBase
 {
@@ -167,7 +168,8 @@ public class UsersController(
         return Ok("Cover photo uploaded successfully.");
     }
 
-    [HttpGet("find-by-email")]
+    [HttpGet("find-by-email")]    
+    [Authorize]
     public async Task<ActionResult<User>> GetUserByEmail([FromQuery][EmailAddress] string email)
     {
         try
@@ -176,11 +178,7 @@ public class UsersController(
 
             if (user == null) return NotFound("User not found.");
 
-            return Ok(new
-            {
-                status = "success",
-                data = user
-            });
+            return Ok(UserMapper.ToMapper(user));
         }
         catch (Exception)
         {
@@ -217,5 +215,22 @@ public class UsersController(
                 message = "Error access database"
             });
         }
+    }
+
+    [HttpGet("last-id")]
+    [Authorize]
+    public async Task<IActionResult> GetLastUserId()
+    {
+        try
+        {
+            var lastId = await userRepository.GetLastUserIdAsync();
+            return Ok(lastId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener el próximo ID de usuario.");
+            return StatusCode(500, "Error interno al obtener el próximo ID.");
+        }
+
     }
 }
