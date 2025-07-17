@@ -69,6 +69,27 @@ namespace EventsTrackerApi.Repositories
             return _context.Users.AnyAsync(e => e.ID == id);
         }
 
+        public async Task<int> GetLastUserIdAsync()
+        {
+            //return await _context.Users
+            //  .OrderByDescending(u => u.ID)
+            //.Select(u => u.ID)
+            //.FirstOrDefaultAsync();
+            var connection = _context.Database.GetDbConnection();
+
+            if (connection.State != System.Data.ConnectionState.Open)
+                await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"SELECT AUTO_INCREMENT
+                                    FROM information_schema.TABLES
+                                    WHERE TABLE_SCHEMA = 'eventstracker'
+                                    AND TABLE_NAME = 'Users'";
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result);
+        }
+
         public async Task<User> ApplyChanges(User existingUser, User userDto)
         {
             // Aplicar solo los campos modificados (si no son null o valores vacíos)
@@ -98,5 +119,5 @@ namespace EventsTrackerApi.Repositories
 
             return existingUser;
         }
-    }    
+    }
 }
