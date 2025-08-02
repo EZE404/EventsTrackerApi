@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using EventsTrackerApi.Controllers.response;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
@@ -9,7 +8,6 @@ using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Mysqlx.Crud;
 
 namespace EventsTrackerApi.Controllers;
 

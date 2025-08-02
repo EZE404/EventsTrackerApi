@@ -1,18 +1,30 @@
+using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsTrackerApi.Controllers
 {
     [Route("api/[controller]")]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
-    public class EventsController(IRepository<Event> eventRepository) : ControllerBase
+    public class EventsController(
+            IEventRepository eventRepository,
+            IRepository<Event> eventIRepository,
+            ILogger<UsersController> _logger
+        ) : ControllerBase
     {
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Event>>> GetEvents()
+        public async Task<ActionResult<IEnumerable<EventDTO>>> GetEvents()
         {
-            var events = await eventRepository.GetAllAsync();
-            return Ok(events);
+            //   var events = await eventRepository.GetAllAsync();
+            //  return Ok( events.Select(e => EventMapper.ToMapper(e)).ToList());        
+            var events = await eventRepository.GetAllWithIncludesAsync();
+            var dtoList = events.Select(e => EventMapper.ToMapper(e)).ToList();
+            return Ok(dtoList);
         }
 
         [HttpGet("{id:int}")]
