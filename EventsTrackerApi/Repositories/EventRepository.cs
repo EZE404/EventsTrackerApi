@@ -22,7 +22,5 @@ namespace EventsTrackerApi.Repositories
         {
             return await _context.Set<User>().FirstOrDefaultAsync(u => u.Email == email);
         }
-    }
-
-    
+    }    
 }
