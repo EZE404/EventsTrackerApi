@@ -11,8 +11,7 @@ namespace EventsTrackerApi.Models
         [Required, MaxLength(70)]
         public string Name { get; set; }
         public string? Description { get; set; }
-        [Required, MaxLength(70)]
-        public string Location { get; set; }
+        public Location Location { get; set; }
         public DateTime StartDateTime { get; set; }
         public DateTime EndDateTime { get; set; }
         public int Capacity { get; set; }
@@ -23,10 +22,10 @@ namespace EventsTrackerApi.Models
         [JsonIgnore]
         public User Creator { get; set; }
 
-
-
         public ICollection<EventInvitation> Invitations { get; set; } = [];
         public ICollection<EventPost> Posts { get; set; } = [];
         public string FlyerUrl { get; set; }
+        
+        public int LocationId { get;  set; }
     }
 }

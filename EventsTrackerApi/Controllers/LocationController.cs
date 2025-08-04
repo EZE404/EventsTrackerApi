@@ -12,10 +12,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventsTrackerApi.Controllers;
 
 [Route("api/[controller]")]
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
-public class UsersController(
-                IUserRepository userRepository,
+public class LocationController(
+                ILocationRepository locationRepository,
                 IRepository<Event> eventRepository,
                 AppDbContext dbContext,
                 IConfiguration configuration,
@@ -23,14 +23,15 @@ public class UsersController(
     )
     : ControllerBase
 {
-    private readonly int IS_HOST = 1;
+   // private readonly int IS_HOST = 1;
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<Location>>> GetLocations()
     {
-        var users = await userRepository.GetAllAsync();
-        return Ok(users.Select(UserMapper.ToMapper));
+        var location = await locationRepository.GetAllAsync();
+        return Ok(location);
     }
+    /*
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<User>> GetUser(int id)
@@ -230,5 +231,5 @@ public class UsersController(
             return StatusCode(500, "Error interno al obtener el próximo ID.");
         }
 
-    }
+    }*/
 }

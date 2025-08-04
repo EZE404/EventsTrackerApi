@@ -9,7 +9,8 @@ namespace EventsTrackerApi.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<EventInvitation> EventInvitations { get; set; }
-        public DbSet<EventPost> EventPosts { get; set; }
+        public DbSet<EventPost> EventPosts { get; set; }        
+        public DbSet<Location> Location { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -17,7 +18,7 @@ namespace EventsTrackerApi.Data
 
             // Configurar las relaciones entre User y EventInvitation
 
-           // modelBuilder.HasSequence<int>("DniSequence")
+            // modelBuilder.HasSequence<int>("DniSequence")
             //    .StartsAt(1)
             //    .IncrementsBy(1);
 

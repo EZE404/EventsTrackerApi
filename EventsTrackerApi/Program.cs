@@ -41,6 +41,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IRepository<User>, UserRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRepository<Event>, EventRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IRepository<Location>, LocationRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 // Añadir más repositorios según sea necesario (por lo del email)
 
 // Configuración de controllers y validación
