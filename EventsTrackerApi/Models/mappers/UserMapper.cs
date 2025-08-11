@@ -20,7 +20,8 @@ public class UserMapper
             FechaActualizacion = user.FechaActualizacion.ToString("yyyy-MM-ddTHH:mm:ss"),
             TelefonoArea = user.TelefonoArea,
             TelefonoNumero = user.TelefonoNumero,
-            IsHost = user.IsHost
+            IsHost = user.IsHost,
+            FlagUpdateData = user.FlagUpdateData
         };
     }
 }

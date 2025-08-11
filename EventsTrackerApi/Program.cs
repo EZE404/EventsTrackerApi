@@ -7,6 +7,8 @@ using EventsTrackerApi.Data;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Models;
 using Microsoft.OpenApi.Models;
+using EventsTrackerApi.Service;
+using EventsTrackerApi.Job;
 
 var builder = WebApplication.CreateBuilder(args);
 // Cargar User Secrets en modo Desarrollo
@@ -99,16 +101,23 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy("AllowAll",
-//         policy =>
-//         {
-//             policy.AllowAnyOrigin()
-//                   .AllowAnyMethod()
-//                   .AllowAnyHeader();
-//         });
-// });
+
+// HttpClient factory (para inyectar IHttpClientFactory)
+builder.Services.AddHttpClient();
+
+// Opciones de Firebase (ProjectId y CredentialsPath)
+builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));
+builder.Services.Configure<NotificationsOptions>(builder.Configuration.GetSection("Notifications"));
+
+// Servicio que envía a FCM
+builder.Services.AddSingleton<FcmService>();
+builder.Services.AddHostedService<EventsSyncJob>();
+builder.Services.AddHostedService<EventsForDefeatJob>();
+
+//SERVICES!
+
+builder.Services.AddSingleton<FcmService>();
+
 var app = builder.Build();
 
 app.UseCors(policy => policy

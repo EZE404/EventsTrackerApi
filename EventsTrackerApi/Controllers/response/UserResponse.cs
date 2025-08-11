@@ -13,4 +13,5 @@ public class UserResponse
     public string TelefonoArea { get; set; }
     public string TelefonoNumero { get; set; }
     public int IsHost { get; set; }
+    public int FlagUpdateData { get; set; }
 }
