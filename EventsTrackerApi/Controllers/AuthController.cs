@@ -3,21 +3,15 @@ using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Utils;
-using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using MimeKit;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
-using Google.Cloud.RecaptchaEnterprise.V1;
-using Google.Apis.Auth.OAuth2;
-using Grpc.Auth;
-using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
+using EventsTrackerApi.Service;
 
 namespace EventsTrackerApi.Controllers;
 
@@ -25,7 +19,8 @@ namespace EventsTrackerApi.Controllers;
 [ApiController]
 public class AuthController(
     IRepository<User> userRepository,
-    IConfiguration configuration
+    IConfiguration configuration,
+    IEmailSender emailSender
     )
     : ControllerBase
 {
@@ -125,15 +120,15 @@ public class AuthController(
 
         await userRepository.UpdateAsync(user);
 
-        var mailOptions = new EmailOptions
+       /* var mailOptions = new EmailOptions
         {
             From = "no-reply@yourdomain.com",
             To = request.Email,
             Subject = "Recuperación de Contraseña",
             Body = Commons.HtmlBodyEmailRecoveryPassword(resetToken)
         };
-        await SenderEmail.SendResetEmail(mailOptions, configuration);
-
+        await SenderEmail.SendResetEmail(mailOptions, configuration);*/
+        await emailSender.SendPasswordRecoveryAsync(request.Email, resetLink);
         return Ok("Password reset link sent to email.");
     }
 

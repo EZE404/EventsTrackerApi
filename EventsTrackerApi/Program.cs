@@ -35,18 +35,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            ClockSkew = TimeSpan.Zero
         };
     });
-
-// Registro de repositorios para inyección de dependencias
-builder.Services.AddScoped<IRepository<User>, UserRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IRepository<Event>, EventRepository>();
-builder.Services.AddScoped<IEventRepository, EventRepository>();
-builder.Services.AddScoped<IRepository<Location>, LocationRepository>();
-builder.Services.AddScoped<ILocationRepository, LocationRepository>();
-// Añadir más repositorios según sea necesario (por lo del email)
 
 // Configuración de controllers y validación
 builder.Services.AddControllers()
@@ -101,22 +93,27 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-
 // HttpClient factory (para inyectar IHttpClientFactory)
 builder.Services.AddHttpClient();
+
+// Registro de repositorios para inyección de dependencias
+builder.Services.AddScoped<IRepository<User>, UserRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRepository<Event>, EventRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IRepository<Location>, LocationRepository>();
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<IEmailSender, EmailSender>();
 
 // Opciones de Firebase (ProjectId y CredentialsPath)
 builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));
 builder.Services.Configure<NotificationsOptions>(builder.Configuration.GetSection("Notifications"));
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 
 // Servicio que envía a FCM
 builder.Services.AddSingleton<FcmService>();
 builder.Services.AddHostedService<EventsSyncJob>();
 builder.Services.AddHostedService<EventsForDefeatJob>();
-
-//SERVICES!
-
-builder.Services.AddSingleton<FcmService>();
 
 var app = builder.Build();
 

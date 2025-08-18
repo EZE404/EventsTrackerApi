@@ -4,10 +4,12 @@ using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Service;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EventsTrackerApi.Controllers;
 
@@ -19,7 +21,8 @@ public class UsersController(
                 IRepository<Event> eventRepository,
                 AppDbContext dbContext,
                 IConfiguration configuration,
-                ILogger<UsersController> _logger
+                ILogger<UsersController> _logger,
+                IEmailSender SenderEmail
     )
     : ControllerBase
 {
@@ -45,7 +48,7 @@ public class UsersController(
     [AllowAnonymous]
     public async Task<ActionResult<User>> CreateUser(User user)
     {
-        var password = user.PasswordHash;
+        var password = user.PasswordHash.IsNullOrEmpty() ? Commons.GeneratePassword(12) : user.PasswordHash;
         user.PasswordHash = Commons.CreatePasswordHash(password);
         user.Dni ??= (await Commons.GetNextDniAsync(dbContext)).ToString();
         user.IsHost = IS_HOST;
@@ -53,7 +56,7 @@ public class UsersController(
 
         if (user.FlagUpdateData != 0)
         {
-            var mailOptions = new EmailOptions
+           /* var mailOptions = new EmailOptions
             {
                 From = "no-reply@yourdomain.com",
                 To = user.Email,
@@ -61,6 +64,8 @@ public class UsersController(
                 Body = Commons.HtmlBodyEmailUserDataChange(user.FirstName, user.Dni, password)
             };
             await SenderEmail.SendResetEmail(mailOptions, configuration);
+            */
+            await SenderEmail.SendUserDataChangeAsync(user.Email, user.FirstName, user.Dni, password);
         }
 
         await userRepository.AddAsync(user);

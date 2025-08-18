@@ -6,32 +6,22 @@ using Microsoft.Extensions.Options;
 
 namespace EventsTrackerApi.Job;
 
-public class EventsForDefeatJob : BackgroundService
+public class EventsForDefeatJob(
+            ILogger<EventsForDefeatJob> logger,
+            FcmService fcm,
+            IOptions<NotificationsOptions> opts,
+            IServiceScopeFactory scopeFactory
+    ) : BackgroundService
 {
-    private readonly ILogger<EventsForDefeatJob> _logger;
-    private readonly FcmService _fcm;
-    private readonly IOptions<NotificationsOptions> _opts;
-    private readonly IServiceScopeFactory _scopeFactory;
-
-
-    public EventsForDefeatJob(
-        ILogger<EventsForDefeatJob> logger,
-        FcmService fcm,
-        IOptions<NotificationsOptions> opts,
-        IServiceScopeFactory scopeFactory
-    )
-    {
-        _logger = logger;
-        _fcm = fcm;
-        _opts = opts;
-        _scopeFactory = scopeFactory; // ¡te faltaba asignarlo!
-    }
+    private readonly ILogger<EventsForDefeatJob> _logger = logger;
+    private readonly FcmService _fcm = fcm;
+    private readonly IOptions<NotificationsOptions> _opts = opts;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-    //    var timer = new PeriodicTimer(TimeSpan.FromHours(1));
         var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
-        await RunJob(stoppingToken); // primera pasada
+      //  await RunJob(stoppingToken);
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -44,31 +34,39 @@ public class EventsForDefeatJob : BackgroundService
         try
         {
             // calcular "mañana" en zona horaria local
-            var tzId = _opts.Value.TimeZoneId ?? "America/Argentina/San_Luis";
-            var tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
-            var nowLocal = TimeZoneInfo.ConvertTime(DateTime.UtcNow, tz);
-            var tomorrowLocal = nowLocal.Date.AddDays(1);
+           var tzId = _opts.Value.TimeZoneId ?? "America/Argentina/San_Luis";
+           var tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+           var (startUtc, endUtc) = GetLocalDayUtcRange(tz, DateTime.UtcNow);
 
-            // Normalizamos a UTC para consultas (si tu DB guarda UTC)
-            var tomorrowUtc = TimeZoneInfo.ConvertTimeToUtc(tomorrowLocal, tz);
 
             _logger.LogInformation("Buscando eventos que finalizan el {FechaLocal} ({FechaUtc} UTC)...",
-                tomorrowLocal.ToShortDateString(), tomorrowUtc.ToString("u"));
+                startUtc.ToShortDateString(), endUtc.ToString("u"));
 
             using var scope = _scopeFactory.CreateScope();
             var eventRepo = scope.ServiceProvider.GetRequiredService<IEventRepository>();
-            var userRepo  = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
             //buscar eventos por vencer
-            var events = await eventRepo.GetEventsEndingOnAsync(tomorrowUtc);
+            var events = await eventRepo.GetEventsEndingBetweenAsync(startUtc, endUtc, ct);
             if (!events.Any())
             {
                 _logger.LogInformation("No hay eventos por vencer mañana.");
                 return;
             }
 
-            //  por cada evento, buscar usuarios y tokens
-            var tasks = events.Select(e => NotificarUsuariosDeEvento(e, eventRepo, ct));
+            var sem = new SemaphoreSlim(10);
+            //var tasks = events.Select(e => NotificarUsuariosDeEvento(e, ct));
+            var tasks = events.Select(async ev =>
+            {
+                await sem.WaitAsync(ct);
+                try
+                {
+                    await NotificarUsuariosDeEvento(ev, ct);
+                }
+                finally
+                {
+                    sem.Release();
+                }
+            });
             await Task.WhenAll(tasks);
 
             _logger.LogInformation("Job 'EventosPorVencer' finalizado.");
@@ -79,11 +77,14 @@ public class EventsForDefeatJob : BackgroundService
         }
     }
 
-    private async Task NotificarUsuariosDeEvento(Event e, IEventRepository eventRepo, CancellationToken ct)
+    private async Task NotificarUsuariosDeEvento(Event e, CancellationToken ct)
     {
+        using var scope = _scopeFactory.CreateScope();
+        var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
         // Usuarios relacionados a ese evento
         // var users = await _userRepo.GetUsersByEventIdAsync(e.ID);
-        var users = await eventRepo.GetAllAsync();
+        //  var users = await userRepo.GetUsersByEventIdAsync(e.ID, ct);
+        var users = await userRepo.GetAllAsync();
         if (!users.Any())
         {
             _logger.LogInformation("Evento {Id} no tiene usuarios relacionados.", e.ID);
@@ -110,18 +111,19 @@ public class EventsForDefeatJob : BackgroundService
 
         _logger.LogInformation("Enviando {Count} notificaciones para evento {Id} ({Name}) con fin {End}.",
             uniqueTokens.Count, e.ID, e.Name, e.EndDateTime);
- 
+
         var title = $"El evento '{e.Name}' finaliza pronto";
         var body = $"Finaliza el {e.EndDateTime:dd/MM/yyyy HH:mm}";
 
+        var data = NotificationDataBuilder.Build(NotificationAction.EventExpired, e);
         // Envío en paralelo con límite (para no saturar)
-        var throttler = new SemaphoreSlim(10); // 10 concurrentes
+        var throttler = new SemaphoreSlim(10);
         var tasks = uniqueTokens.Select(async token =>
         {
             await throttler.WaitAsync(ct);
             try
             {
-                await _fcm.SendToTokenAsync(token, title, body, ct: ct);
+                await _fcm.SendToTokenAsync(token, title, body, data, ct: ct);
             }
             catch (Exception sendEx)
             {
@@ -135,9 +137,21 @@ public class EventsForDefeatJob : BackgroundService
 
         await Task.WhenAll(tasks);
     }
+    
+    private static (DateTime startUtc, DateTime endUtc) GetLocalDayUtcRange(TimeZoneInfo tz, DateTime utcNow)
+    {
+        var localNow = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
+        var startLocal = localNow.Date.AddDays(1);     // 00:00 de mañana, local
+        var endLocal   = startLocal.AddDays(1);        // 00:00 de pasado mañana, local
+        var startUtc   = TimeZoneInfo.ConvertTimeToUtc(startLocal, tz);
+        var endUtc     = TimeZoneInfo.ConvertTimeToUtc(endLocal, tz);
+        return (startUtc, endUtc);
+    }
+
 }
 
 public class NotificationsOptions
 {
     public string? TimeZoneId { get; set; }
 }
+

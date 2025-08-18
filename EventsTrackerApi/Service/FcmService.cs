@@ -36,7 +36,13 @@ public class FcmService
         return accessToken;
     }
 
-    public async Task SendToDivaceTokenAsync(string deviceToken, string title, string body)
+    public async Task SendToDivaceTokenAsync(
+        string deviceToken,
+        string title,
+        string body,
+        IReadOnlyDictionary<string, string>? data = null,
+        CancellationToken ct = default
+        )
     {
         var accessToken = await GetAccessTokenAsync();
         var url = $"https://fcm.googleapis.com/v1/projects/{_opts.ProjectId}/messages:send";
@@ -46,7 +52,8 @@ public class FcmService
             message = new
             {
                 token = deviceToken,
-                notification = new { title, body }
+        //    notification = new { title, body }, SACARLO PARA Q FUNCIONE EL onMessageReceived DE FCM
+                data
             }
         };
 
@@ -55,7 +62,7 @@ public class FcmService
         http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
         var res = await http.PostAsync(url, new StringContent(json, Encoding.UTF8, "application/json"));
-        var resp = await res.Content.ReadAsStringAsync();
+        var resp = await res.Content.ReadAsStringAsync(ct);
         if (!res.IsSuccessStatusCode)
             throw new InvalidOperationException($"FCM v1 send failed: {(int)res.StatusCode} {res.StatusCode} - {resp}");
     }
@@ -63,7 +70,7 @@ public class FcmService
         string deviceToken,
         string title,
         string body,
-        IDictionary<string, string>? data = null,
+        IReadOnlyDictionary<string, string>? data = null,
         CancellationToken ct = default)
     {
         var accessToken = await GetAccessTokenAsync();
@@ -74,8 +81,8 @@ public class FcmService
         var message = new
         {
             token = deviceToken,
-            notification = new { title, body },
-            data = data // Puede ser null, FCM lo ignora si es null
+            //    notification = new { title, body }, SACARLO PARA Q FUNCIONE EL onMessageReceived DE FCM
+            data 
         };
 
         var payload = new { message };
