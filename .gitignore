@@ -35,6 +35,7 @@
 project.lock.json
 project.fragment.lock.json
 ./EventsTrackerApi/eventstracker-c25d6-firebase.json
+EventsTrackerApi\eventstracker-c25d6-firebase.json
 artifacts/
 
 # Archivos de configuración global de Visual Studio
