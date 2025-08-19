@@ -72,3 +72,4 @@ dotnet.exe
 
 # Archivos de configuración de docker
 docker-compose.override.yml
+EventsTrackerApi/eventstracker-c25d6-firebase.json
