@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventsTrackerApi.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
     public class EventsController(
             IEventRepository eventRepository,
@@ -17,13 +17,15 @@ namespace EventsTrackerApi.Controllers
             ILogger<UsersController> _logger
         ) : ControllerBase
     {
+
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<EventDTO>>> GetEvents()
+        public async Task<ActionResult<IEnumerable<EventDTO>>> GetEvents(
+            [FromQuery] EventsFilterRequest request
+        )
         {
-            //   var events = await eventRepository.GetAllAsync();
-            //  return Ok( events.Select(e => EventMapper.ToMapper(e)).ToList());        
-            var events = await eventRepository.GetAllWithIncludesAsync();
-            var dtoList = events.Select(e => EventMapper.ToMapper(e)).ToList();
+            var events = await eventRepository.GetFilteredWithIncludesAsync(request);
+
+            var dtoList = events.Select(EventMapper.ToMapper).ToList();
             return Ok(dtoList);
         }
 

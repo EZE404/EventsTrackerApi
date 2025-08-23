@@ -119,16 +119,7 @@ public class AuthController(
         user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
 
         await userRepository.UpdateAsync(user);
-
-       /* var mailOptions = new EmailOptions
-        {
-            From = "no-reply@yourdomain.com",
-            To = request.Email,
-            Subject = "Recuperación de Contraseña",
-            Body = Commons.HtmlBodyEmailRecoveryPassword(resetToken)
-        };
-        await SenderEmail.SendResetEmail(mailOptions, configuration);*/
-        await emailSender.SendPasswordRecoveryAsync(request.Email, resetLink);
+        await emailSender.SendPasswordRecoveryAsync(request.Email, resetToken);
         return Ok("Password reset link sent to email.");
     }
 
@@ -192,7 +183,6 @@ public class AuthController(
         GoogleJsonWebSignature.Payload payload;
         try
         {
-            // Valida el idToken de Google
             payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken);
         }
         catch (Exception ex)
@@ -203,7 +193,6 @@ public class AuthController(
 
         string newToken = GenerateJwtTokenGoogle(payload.Email);
 
-        // Retorna el token nuevo
         return Ok(new { token = newToken });
 
     }

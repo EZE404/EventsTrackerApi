@@ -55,16 +55,7 @@ public class UsersController(
         user.FechaActualizacion = DateTime.UtcNow;
 
         if (user.FlagUpdateData != 0)
-        {
-           /* var mailOptions = new EmailOptions
-            {
-                From = "no-reply@yourdomain.com",
-                To = user.Email,
-                Subject = "Actualizar los datos del usuario",
-                Body = Commons.HtmlBodyEmailUserDataChange(user.FirstName, user.Dni, password)
-            };
-            await SenderEmail.SendResetEmail(mailOptions, configuration);
-            */
+        {           
             await SenderEmail.SendUserDataChangeAsync(user.Email, user.FirstName, user.Dni, password);
         }
 

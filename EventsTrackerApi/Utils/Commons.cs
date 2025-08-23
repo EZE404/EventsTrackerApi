@@ -40,47 +40,106 @@ public class Commons
         }
     }
 
+
     public static string HtmlBodyEmailRecoveryPassword(string verificationNumber)
     {
-        return $@"
-        <html>
-        <head>
-            <style>
-                .email-body {{
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    background-color: #f4f4f4;
-                    padding: 20px;
-                }}
-                .email-content {{
-                    background-color: #ffffff;
-                    padding: 20px;
-                    border-radius: 8px;
-                    margin: 20px auto;
-                    max-width: 600px;
-                    text-align: center;
-                }}
-                .verification-number {{
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #4CAF50;
-                    margin: 20px 0;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class='email-body'>
-                <div class='email-content'>
-                    <h2>Recuperación de Contraseña Events Tracker</h2>
-                    <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Por favor, usa el siguiente código de verificación para restablecer tu contraseña:</p>
-                    <h3 class='verification-number'>{verificationNumber}</h3>
-                    <p>Si no solicitaste restablecer tu contraseña, por favor ignora este correo electrónico. Tu cuenta sigue siendo segura y no se ha realizado ningún cambio.</p>
-                    <p>Muchas Gracias!</p>
+            return $@"
+            <html>
+            <head>
+                <meta charset='utf-8' />
+                <style>
+                    body {{
+                        font-family: 'Segoe UI', Arial, sans-serif;
+                        background-color: #f4f4f4;
+                        margin: 0;
+                        padding: 20px;
+                    }}
+                    .email-container {{
+                        max-width: 600px;
+                        margin: auto;
+                        background-color: #ffffff;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                        overflow: hidden;
+                    }}
+                    .header {{
+                        background-color: #2e7d32;
+                        color: white;
+                        padding: 20px;
+                        font-size: 22px;
+                        font-weight: bold;
+                        text-align: center;
+                    }}
+                    .content {{
+                        padding: 20px;
+                        color: #333333;
+                        font-size: 16px;
+                        line-height: 1.6;
+                    }}
+                    .highlight {{
+                        font-weight: bold;
+                        color: #ff9800;
+                    }}
+                    .code-section {{
+                        background-color: #e8f5e9;
+                        padding: 15px;
+                        font-size: 22px;
+                        font-weight: 800;
+                        color: #2e7d32;
+                        border-radius: 8px;
+                        border: 1px solid #c8e6c9;
+                        margin: 20px 0;
+                        letter-spacing: 3px;
+                        text-align: center;
+                        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                    }}
+                    .note {{
+                        background-color: #fffde7;
+                        border-left: 5px solid #ffb300;
+                        padding: 12px;
+                        border-radius: 6px;
+                        margin-top: 10px;
+                        font-size: 14px;
+                        color: #5f5f5f;
+                    }}
+                    .footer {{
+                        text-align: center;
+                        padding: 15px;
+                        font-size: 14px;
+                        color: #777;
+                        background-color: #fafafa;
+                        border-top: 1px solid #eee;
+                    }}
+                    a.btn {{
+                        display: inline-block;
+                        padding: 12px 18px;
+                        border-radius: 8px;
+                        text-decoration: none;
+                        background-color: #2e7d32;
+                        color: #fff;
+                        font-weight: 600;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class='email-container'>
+                    <div class='header'>
+                        Recuperación de Contraseña <span class='highlight'>Events Tracker</span>
+                    </div>
+                    <div class='content'>
+                        <p>Hola,</p>
+                        <p>Recibimos una solicitud para restablecer tu contraseña. Usá este código de verificación:</p>
+                        <div class='code-section'>{verificationNumber}</div>
+                        <p>El código vence en unos minutos. Si no fuiste vos, ignorá este correo.</p>
+                        <div class='note'>Tip: copiá y pegá el código exactamente como aparece.</div>
+                    </div>
+                    <div class='footer'>
+                        Gracias,<br/>El equipo de <span class='highlight'>Events Tracker</span>
+                    </div>
                 </div>
-            </div>
-        </body>
-        </html>
-    ";
+            </body>
+            </html>
+            ";
     }
 
     public static string HtmlBodyEmailUserDataChange(string userName, string dni, string randomPassword)

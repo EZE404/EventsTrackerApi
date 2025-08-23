@@ -8,6 +8,7 @@ public class EventsSyncJob : BackgroundService
 {
     private readonly ILogger<EventsSyncJob> _logger;
     private readonly FcmService _fcm;
+    private readonly int MINUTES_TO_SYNC = 180;
 
     public EventsSyncJob(ILogger<EventsSyncJob> logger, FcmService fcm)
     {
@@ -18,9 +19,9 @@ public class EventsSyncJob : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
          _logger.LogInformation("Corriendo cron de eventos...");
-        var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+        var timer = new PeriodicTimer(TimeSpan.FromMinutes(MINUTES_TO_SYNC));
 
-     //   await RunCronJob(stoppingToken);
+        await RunCronJob(stoppingToken);
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
