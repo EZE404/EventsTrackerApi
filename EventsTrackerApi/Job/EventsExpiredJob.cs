@@ -17,11 +17,12 @@ public class EventsForDefeatJob(
     private readonly FcmService _fcm = fcm;
     private readonly IOptions<NotificationsOptions> _opts = opts;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
+    private readonly int MINUTES_TO_SYNC = 180;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var timer = new PeriodicTimer(TimeSpan.FromMinutes(5));
-      //  await RunJob(stoppingToken);
+        var timer = new PeriodicTimer(TimeSpan.FromMinutes(MINUTES_TO_SYNC));
+        await RunJob(stoppingToken);
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
@@ -34,9 +35,9 @@ public class EventsForDefeatJob(
         try
         {
             // calcular "mañana" en zona horaria local
-           var tzId = _opts.Value.TimeZoneId ?? "America/Argentina/San_Luis";
-           var tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
-           var (startUtc, endUtc) = GetLocalDayUtcRange(tz, DateTime.UtcNow);
+            var tzId = _opts.Value.TimeZoneId ?? "America/Argentina/San_Luis";
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
+            var (startUtc, endUtc) = GetLocalDayUtcRange(tz, DateTime.UtcNow);
 
 
             _logger.LogInformation("Buscando eventos que finalizan el {FechaLocal} ({FechaUtc} UTC)...",
@@ -137,14 +138,14 @@ public class EventsForDefeatJob(
 
         await Task.WhenAll(tasks);
     }
-    
+
     private static (DateTime startUtc, DateTime endUtc) GetLocalDayUtcRange(TimeZoneInfo tz, DateTime utcNow)
     {
         var localNow = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz);
         var startLocal = localNow.Date.AddDays(1);     // 00:00 de mañana, local
-        var endLocal   = startLocal.AddDays(1);        // 00:00 de pasado mañana, local
-        var startUtc   = TimeZoneInfo.ConvertTimeToUtc(startLocal, tz);
-        var endUtc     = TimeZoneInfo.ConvertTimeToUtc(endLocal, tz);
+        var endLocal = startLocal.AddDays(1);        // 00:00 de pasado mañana, local
+        var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, tz);
+        var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, tz);
         return (startUtc, endUtc);
     }
 
