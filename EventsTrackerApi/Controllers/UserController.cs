@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using EventsTrackerApi.Controllers.response;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
@@ -164,7 +165,7 @@ public class UsersController(
 
     [HttpGet("find-by-email")]    
     [Authorize]
-    public async Task<ActionResult<User>> GetUserByEmail([FromQuery][EmailAddress] string email)
+    public async Task<ActionResult<UserResponse>> GetUserByEmail([FromQuery][EmailAddress] string email)
     {
         try
         {

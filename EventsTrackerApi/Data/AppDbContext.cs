@@ -9,8 +9,11 @@ namespace EventsTrackerApi.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Event> Events { get; set; }
         public DbSet<EventInvitation> EventInvitations { get; set; }
-        public DbSet<EventPost> EventPosts { get; set; }        
+        public DbSet<EventPost> EventPosts { get; set; }
         public DbSet<Location> Location { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<EventTag> EventTags { get; set; }
+        public DbSet<EventRating> EventRatings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -39,6 +42,46 @@ namespace EventsTrackerApi.Data
                 .WithMany(e => e.Invitations)
                 .HasForeignKey(ei => ei.EventID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Tag>(e =>
+            {
+                e.ToTable("Tags");
+                e.Property(x => x.Name).HasMaxLength(80).IsRequired();
+                e.HasIndex(x => x.Name).IsUnique(); // con utf8mb4_* será case-insensitive
+            });
+
+            modelBuilder.Entity<EventTag>(e =>
+            {
+                e.ToTable("EventTags");
+                e.HasKey(x => new { x.EventId, x.TagId });     // PK compuesta
+
+                e.HasOne(x => x.Event)
+                    .WithMany(ev => ev.EventTags)
+                    .HasForeignKey(x => x.EventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.Tag)
+                    .WithMany(t => t.EventTags)
+                    .HasForeignKey(x => x.TagId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<EventRating>(e =>
+            {
+                e.ToTable("EventRatings");
+                e.HasKey(x => new { x.EventId, x.UserId });
+                e.Property(x => x.Score).IsRequired();
+
+                e.HasOne(x => x.Event)
+                .WithMany()
+                .HasForeignKey(x => x.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

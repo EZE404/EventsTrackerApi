@@ -6,11 +6,11 @@ namespace EventsTrackerApi.Models;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum EventStatus
 {
-    [EnumMember(Value = "PUBLICADO")]
-    PUBLICADO = 0,
-
     [EnumMember(Value = "CONCLUIDO")]
-    CONCLUIDO = 1,
+    CONCLUIDO = 0,
+
+     [EnumMember(Value = "PUBLICADO")]
+    PUBLICADO = 1,
 
     [EnumMember(Value = "CANCELADO")]
     CANCELADO = 2,

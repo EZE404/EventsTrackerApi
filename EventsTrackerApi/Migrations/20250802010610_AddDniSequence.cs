@@ -20,7 +20,7 @@ namespace EventsTrackerApi.Migrations
             `cache_size` bigint(21) unsigned NOT NULL,
             `cycle_option` tinyint(1) unsigned NOT NULL,
             `cycle_count` bigint(21) NOT NULL
-        ) ENGINE=InnoDB SEQUENCE=1;
+        ) ENGINE=InnoDB AUTO_INCREMENT=1;
     ");
 
             // Insertar el valor inicial

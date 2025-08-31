@@ -23,7 +23,12 @@ public class EventMapper
             Creator = UserMapper.ToMapper(e.Creator),
             Invitations = new List<object>(),
             Posts = new List<object>(),
-            LocationId = e.LocationId
+            LocationId = e.LocationId,
+            Tags = new List<object>(e.EventTags.Select(et => TagMapper.ToMapper(et.Tag))),
+            RatingCount   = e.RatingsCount,
+            RatingAverage = e.RatingsCount == 0 ? 0
+                       : (double)e.RatingsSum / (2 * e.RatingsCount),
+            Price = e.Price
         };
     }
 }
