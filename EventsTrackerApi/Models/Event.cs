@@ -33,9 +33,9 @@ namespace EventsTrackerApi.Models
         public float Price { get; set; }
         
         public int RatingsCount { get; set; } = 0;
-        public int RatingsSum   { get; set; } = 0;
+        public double RatingsSum   { get; set; } = 0;
 
         [NotMapped]
-        public double RatingAverage => RatingsCount == 0 ? 0 : (double)RatingsSum / (2 * RatingsCount);
+        public double RatingAverage => RatingsCount == 0 ? 0 : RatingsSum / (2 * RatingsCount);
     }
 }

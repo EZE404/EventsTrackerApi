@@ -115,7 +115,9 @@ namespace EventsTrackerApi.Repositories
             await _context.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
 
-            var avg = evt.RatingsCount == 0 ? 0 : (double)evt.RatingsSum / (2 * evt.RatingsCount);
+            var avg = evt.RatingsCount == 0 
+                ? 0d 
+                : (double)evt.RatingsSum / (2.0 * evt.RatingsCount);
             return (avg, evt.RatingsCount);
         }
 

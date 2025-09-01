@@ -23,5 +23,6 @@ public class EventDTO
 
     public float Price { get; set; }
     public double RatingAverage { get; set; }
+    public double RatingSum { get; set; }
     public int RatingCount { get; set; }
 }

@@ -8,6 +8,11 @@ public class EventMapper
     {
         if (e == null) return null;
 
+         // Normalizado a 0–5 (partiendo de scores 1–10)
+        var avg5 = e.RatingsCount == 0 
+            ? 0d 
+            : (double)e.RatingsSum / (2.0 * e.RatingsCount);
+
         return new EventDTO
         {
             Id = e.ID,
@@ -25,9 +30,9 @@ public class EventMapper
             Posts = new List<object>(),
             LocationId = e.LocationId,
             Tags = new List<object>(e.EventTags.Select(et => TagMapper.ToMapper(et.Tag))),
-            RatingCount   = e.RatingsCount,
-            RatingAverage = e.RatingsCount == 0 ? 0
-                       : (double)e.RatingsSum / (2 * e.RatingsCount),
+            RatingCount = e.RatingsCount,
+            RatingAverage = Math.Round(avg5, 2),
+            RatingSum = e.RatingsSum,
             Price = e.Price
         };
     }
