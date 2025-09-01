@@ -18,6 +18,8 @@ namespace EventsTrackerApi.Models
         public int CreatorID { get; set; }
         public int Status { get; set; }
 
+        public ICollection<EventTag> EventTags { get; set; } = new List<EventTag>();
+
         [ForeignKey("CreatorID")]
         [JsonIgnore]
         public User Creator { get; set; }
@@ -25,7 +27,15 @@ namespace EventsTrackerApi.Models
         public ICollection<EventInvitation> Invitations { get; set; } = [];
         public ICollection<EventPost> Posts { get; set; } = [];
         public string FlyerUrl { get; set; }
+
+        public int LocationId { get; set; }
+
+        public float Price { get; set; }
         
-        public int LocationId { get;  set; }
+        public int RatingsCount { get; set; } = 0;
+        public double RatingsSum   { get; set; } = 0;
+
+        [NotMapped]
+        public double RatingAverage => RatingsCount == 0 ? 0 : RatingsSum / (2 * RatingsCount);
     }
 }

@@ -4,6 +4,7 @@ using EventsTrackerApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventsTrackerApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250828173034_AddNewModelsTagEventTags")]
+    partial class AddNewModelsTagEventTags
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,15 +56,6 @@ namespace EventsTrackerApi.Migrations
                         .IsRequired()
                         .HasMaxLength(70)
                         .HasColumnType("varchar(70)");
-
-                    b.Property<float>("Price")
-                        .HasColumnType("float");
-
-                    b.Property<int>("RatingsCount")
-                        .HasColumnType("int");
-
-                    b.Property<double>("RatingsSum")
-                        .HasColumnType("double");
 
                     b.Property<DateTime>("StartDateTime")
                         .HasColumnType("datetime(6)");
@@ -145,30 +139,6 @@ namespace EventsTrackerApi.Migrations
                     b.HasIndex("UserID");
 
                     b.ToTable("EventPosts");
-                });
-
-            modelBuilder.Entity("EventsTrackerApi.Models.EventRating", b =>
-                {
-                    b.Property<int>("EventId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<byte>("Score")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("EventId", "UserId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("EventRatings", (string)null);
                 });
 
             modelBuilder.Entity("EventsTrackerApi.Models.EventTag", b =>
@@ -383,25 +353,6 @@ namespace EventsTrackerApi.Migrations
                     b.HasOne("EventsTrackerApi.Models.User", "User")
                         .WithMany("Posts")
                         .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Event");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("EventsTrackerApi.Models.EventRating", b =>
-                {
-                    b.HasOne("EventsTrackerApi.Models.Event", "Event")
-                        .WithMany()
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EventsTrackerApi.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

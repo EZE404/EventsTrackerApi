@@ -18,5 +18,11 @@ public class EventDTO
     public object? Creator { get; set; } = null;
     public List<object> Invitations { get; set; } = new();
     public List<object> Posts { get; set; } = new();
-    public int LocationId { get;  set; }
+    public int LocationId { get; set; }
+    public List<object> Tags { get; set; } = new();
+
+    public float Price { get; set; }
+    public double RatingAverage { get; set; }
+    public double RatingSum { get; set; }
+    public int RatingCount { get; set; }
 }
