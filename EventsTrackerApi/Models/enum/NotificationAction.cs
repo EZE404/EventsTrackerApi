@@ -4,7 +4,7 @@ public enum NotificationAction
     EventExpired,
     EventStartingSoon,
     EventUpdated,
-    OpenUrl,
+    EventsExpiringTomorrow,
     Profile,
     SyncMeetings
 }

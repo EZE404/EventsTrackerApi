@@ -46,6 +46,26 @@ namespace EventsTrackerApi.Repositories
         {
             return _context.Set<T>().Where(predicate);
         }
+
+        public Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        {
+           return _context.Set<T>().FirstOrDefaultAsync(predicate, ct);
+        }
+
+        public Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        {
+            return _context.Set<T>().AnyAsync(predicate, ct);
+        }
+
+        public Task<List<T>> ToListAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default)
+        {
+           return _context.Set<T>().Where(predicate).ToListAsync(ct);
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken ct = default)
+        {
+            return _context.SaveChangesAsync(ct);
+        }
        
     }
 }

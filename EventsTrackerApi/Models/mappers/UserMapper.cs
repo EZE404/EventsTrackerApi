@@ -4,11 +4,11 @@ namespace EventsTrackerApi.Models.mappers;
 
 public class UserMapper
 {
-    public static UserResponse? ToMapper(User user)
+    public static UserDto? ToMapper(User user)
     {
         if (user == null) return null;
 
-        return new UserResponse
+        return new UserDto
         {
             Id = user.ID,
             Dni = user.Dni,

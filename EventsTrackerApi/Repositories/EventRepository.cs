@@ -42,7 +42,7 @@ namespace EventsTrackerApi.Repositories
                         .ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<Event>> GetFilteredWithIncludesAsync(EventsFilterRequest request)
+        public async Task<IEnumerable<Event>> GetFilteredWithIncludesAsync(EventsFilterDto request)
         {
             var query = _context.Set<Event>()
                 .Include(e => e.Creator)

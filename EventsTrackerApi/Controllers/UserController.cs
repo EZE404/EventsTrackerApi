@@ -165,7 +165,7 @@ public class UsersController(
 
     [HttpGet("find-by-email")]    
     [Authorize]
-    public async Task<ActionResult<UserResponse>> GetUserByEmail([FromQuery][EmailAddress] string email)
+    public async Task<ActionResult<UserDto>> GetUserByEmail([FromQuery][EmailAddress] string email)
     {
         try
         {

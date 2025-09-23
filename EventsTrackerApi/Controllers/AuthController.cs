@@ -24,7 +24,7 @@ public class AuthController(
     )
     : ControllerBase
 {
-    private readonly string projectId = "eventstracker-c25d6";
+    private readonly string projectId = "eventstracker-e0611";
     private readonly string siteKey = "6Ldzi2srAAAAAEjfdihAQuIMcrude2r891D1idQE";
 
     [HttpPost("login")]
@@ -43,7 +43,6 @@ public class AuthController(
             Data = UserMapper.ToMapper(user)
         });
     }
-
 
     private string GenerateJwtToken(User user)
     {
@@ -218,8 +217,5 @@ public class AuthController(
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-   
+    }   
 }
-

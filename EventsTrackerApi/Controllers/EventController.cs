@@ -1,11 +1,8 @@
-using System.Security.Claims;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Controllers.request;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsTrackerApi.Controllers
@@ -15,14 +12,13 @@ namespace EventsTrackerApi.Controllers
     [ApiController]
     public class EventsController(
             IEventRepository iEventRepository,
-            IRepository<Event> iRepository,
             ILogger<UsersController> _logger
         ) : ControllerBase
     {
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EventDTO>>> GetEvents(
-            [FromQuery] EventsFilterRequest request
+            [FromQuery] EventsFilterDto request
         )
         {
             var events = await iEventRepository.GetFilteredWithIncludesAsync(request);
@@ -62,7 +58,7 @@ namespace EventsTrackerApi.Controllers
         }
 
         [HttpPost("{eventId:int}/ratings")]
-        public async Task<ActionResult<RatingSummaryDto>> RateEvent(int eventId, [FromBody] RateEventRequest req, CancellationToken ct)
+        public async Task<ActionResult<RatingSummaryDto>> RateEvent(int eventId, [FromBody] RateEventDto req, CancellationToken ct)
         {           
             int userId = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
             _logger.LogInformation($"UserId: {userId}");

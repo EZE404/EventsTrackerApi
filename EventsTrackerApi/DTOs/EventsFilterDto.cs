@@ -1,7 +1,7 @@
 using EventsTrackerApi.Controllers.request;
 using EventsTrackerApi.Models;
 
-public class EventsFilterRequest
+public class EventsFilterDto
 {
     public string? NameDescription { get; set; }
     public EventStatus? Status { get; set; }

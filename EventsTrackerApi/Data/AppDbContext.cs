@@ -14,6 +14,7 @@ namespace EventsTrackerApi.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<EventTag> EventTags { get; set; }
         public DbSet<EventRating> EventRatings { get; set; }
+        public DbSet<UserDeviceToken> UserDeviceTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -82,6 +83,30 @@ namespace EventsTrackerApi.Data
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             });
+
+          modelBuilder.Entity<UserDeviceToken>(e =>
+            {
+                e.ToTable("UserDeviceTokens");
+
+                e.Property(x => x.Token).HasMaxLength(255).IsRequired();
+                e.Property(x => x.Platform).HasMaxLength(20).IsRequired();
+                e.Property(x => x.DeviceId).HasMaxLength(128);
+                e.Property(x => x.AppVersion).HasMaxLength(20);
+
+                e.Property(x => x.IsActive).HasDefaultValue(true);
+                e.Property(x => x.LastSeenUtc).HasDefaultValueSql("UTC_TIMESTAMP()");
+                e.Property(x => x.CreatedAtUtc).HasDefaultValueSql("UTC_TIMESTAMP()");
+                e.Property(x => x.UpdatedAtUtc).HasDefaultValueSql("UTC_TIMESTAMP()");
+
+                e.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasIndex(x => x.Token).IsUnique();
+
+                e.HasIndex(x => new { x.UserId, x.DeviceId }).IsUnique();
+            }); 
         }
     }
 }

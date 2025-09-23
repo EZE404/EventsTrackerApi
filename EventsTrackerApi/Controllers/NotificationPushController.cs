@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventsTrackerApi.Controllers;
 
 [Route("api/[controller]")]
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 public class NotificationPushController(
                 IUserRepository userRepository,
@@ -32,7 +32,7 @@ public class NotificationPushController(
     }
 
     [HttpPost("send")]
-    public async Task<IActionResult> SendMessage([FromBody] FcmRequest request)
+    public async Task<IActionResult> SendMessage([FromBody] FcmDto request)
     {
         try
         {

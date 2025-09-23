@@ -1,6 +1,6 @@
 namespace EventsTrackerApi.Controllers.response;
 
-public class UserResponse
+public class UserDto
 {
     public int Id { get; set; }
     public string Dni { get; set; }
