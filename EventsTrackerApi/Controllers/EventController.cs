@@ -16,6 +16,7 @@ namespace EventsTrackerApi.Controllers
     public class EventsController(
             IEventRepository iEventRepository,
             IRepository<Event> iRepository,
+            IRepository<Location> iLocationRepository,
             ILogger<UsersController> _logger
         ) : ControllerBase
     {
@@ -40,8 +41,18 @@ namespace EventsTrackerApi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<EventDTO>> CreateEvent(Event evt)
+        public async Task<ActionResult<Event>> CreateEvent(EventCreateDto dto)
         {
+            // Validar DTO
+            if (dto == null || dto.Location == null)
+                return BadRequest("Datos de evento o ubicación inválidos.");
+
+            // Crear Location usando el mapper
+            var location = LocationMapper.ToModel(dto.Location);
+            await iLocationRepository.AddAsync(location);
+
+            // Crear Event usando el mapper
+            var evt = EventMapper.ToModel(dto, location);
             await iEventRepository.AddAsync(evt);
             return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);
         }

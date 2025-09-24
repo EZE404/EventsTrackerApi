@@ -19,6 +19,10 @@ public class Location
     [Range(-180.0, 180.0, ErrorMessage = "La longitud debe estar entre -180.0 y 180.0.")]
     public decimal Longitude { get; set; }
 
+    [Required(ErrorMessage = "La dirección es obligatoria.")]
+    [MaxLength(200, ErrorMessage = "La dirección no puede exceder los 200 caracteres.")]
+    public string Address { get; set; }
+
     // Propiedad opcional si querés que un Location pertenezca a un Event
     //public ICollection<Event>? Events { get; set; }
 }
