@@ -50,9 +50,11 @@ namespace EventsTrackerApi.Models.mappers
                 StartDateTime = DateTime.SpecifyKind(dto.StartDateTime, DateTimeKind.Utc),
                 EndDateTime = DateTime.SpecifyKind(dto.EndDateTime, DateTimeKind.Utc),
                 Capacity = dto.Capacity,
-                CreatorID = dto.CreatorID
+                CreatorID = dto.CreatorID,
+                Status = dto.Status,
+                FlyerUrl = dto.FlyerUrl,
+                Price = dto.Price
             };
         }
     }
 }
-

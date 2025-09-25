@@ -9,5 +9,8 @@ namespace EventsTrackerApi.DTOs
         public DateTime EndDateTime { get; set; }
         public int Capacity { get; set; }
         public int CreatorID { get; set; }
+        public int Status { get; set; }
+        public string FlyerUrl { get; set; }
+        public float Price { get; set; }
     }
 }
