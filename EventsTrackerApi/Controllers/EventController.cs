@@ -1,3 +1,4 @@
+using System;
 using System.Security.Claims;
 using System.IO;
 using EventsTrackerApi.DTOs;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using EventsTrackerApi.Utils;
 
 namespace EventsTrackerApi.Controllers
 {
@@ -56,12 +58,6 @@ namespace EventsTrackerApi.Controllers
             if (form.Flyer == null || form.Flyer.Length == 0)
                 return BadRequest("El archivo de portada (flyer) es requerido.");
 
-            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            var extension = Path.GetExtension(form.Flyer.FileName);
-            if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
-                return BadRequest("Formato de imagen no soportado. Use: jpg, jpeg, png, webp o gif.");
-
             // Obtener usuario actual desde el token
             var userIdClaim = User.FindFirst("Id_user")?.Value;
             if (string.IsNullOrWhiteSpace(userIdClaim))
@@ -80,20 +76,16 @@ namespace EventsTrackerApi.Controllers
                 return Forbid(); // 403 - falta de permisos
             }
 
-            // Guardar imagen en wwwroot/uploads/flyers con nombre único
-            var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "flyers");
-            Directory.CreateDirectory(uploadsRoot);
-            var fileName = $"{Guid.NewGuid():N}{extension}";
-            var filePath = Path.Combine(uploadsRoot, fileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            // Guardar imagen de flyer usando utilidad compartida
+            string flyerUrl;
+            try
             {
-                await form.Flyer.CopyToAsync(stream);
+                flyerUrl = await ImageFilesUtils.SaveFlyerAsync(form.Flyer);
             }
-
-            // Construir URL pública
-            //var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            //var flyerUrl = $"{baseUrl}/uploads/flyers/{fileName}";
-            var flyerUrl = $"/uploads/flyers/{fileName}"; // URL relativa para mayor flexibilidad
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
             // Mapear y construir modelos directamente desde el formulario
             var location = LocationMapper.ToModel(form);
