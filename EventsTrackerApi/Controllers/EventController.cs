@@ -11,12 +11,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace EventsTrackerApi.Controllers
 {
     [Route("api/[controller]")]
-    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
     public class EventsController(
             IEventRepository iEventRepository,
             IRepository<Event> iRepository,
-            IRepository<Location> iLocationRepository,
+            IRepository<User> userRepository,
             ILogger<UsersController> _logger
         ) : ControllerBase
     {
@@ -41,18 +40,35 @@ namespace EventsTrackerApi.Controllers
         }
 
         [HttpPost]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
         public async Task<ActionResult<Event>> CreateEvent(EventCreateDto dto)
         {
             // Validar DTO
             if (dto == null || dto.Location == null)
-                return BadRequest("Datos de evento o ubicación inválidos.");
+                return BadRequest("Datos de evento o ubicacion invalidos.");
 
-            // Crear Location usando el mapper
+            // Obtener usuario actual desde el token
+            var userIdClaim = User.FindFirst("Id_user")?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim))
+                return Unauthorized("Usuario no autenticado.");
+
+            if (!int.TryParse(userIdClaim, out var userId))
+                return Unauthorized("Token invalido.");
+
+            var user = await userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return Unauthorized("Usuario no encontrado.");
+
+            // Validar permisos: debe ser host
+            if (user.IsHost != 1)
+            {
+                return Forbid(); // 403 - falta de permisos
+            }
+
+            // Construir el agregado Event + Location y delegar el guardado a EF Core
             var location = LocationMapper.ToModel(dto.Location);
-            await iLocationRepository.AddAsync(location);
+            var evt = EventMapper.ToModel(dto, location, userId);
 
-            // Crear Event usando el mapper
-            var evt = EventMapper.ToModel(dto, location);
             await iEventRepository.AddAsync(evt);
             return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);
         }
@@ -74,7 +90,7 @@ namespace EventsTrackerApi.Controllers
 
         [HttpPost("{eventId:int}/ratings")]
         public async Task<ActionResult<RatingSummaryDto>> RateEvent(int eventId, [FromBody] RateEventRequest req, CancellationToken ct)
-        {           
+        {
             int userId = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
             _logger.LogInformation($"UserId: {userId}");
 

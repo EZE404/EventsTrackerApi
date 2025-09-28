@@ -5,13 +5,13 @@ namespace EventsTrackerApi.Models.mappers
 {
     public static class EventMapper
     {
-        public static EventDTO? ToMapper(Event e) 
+        public static EventDTO? ToMapper(Event e)
         {
             if (e == null) return null;
 
-            // Normalizado a 0–5 (partiendo de scores 1–10)
-            var avg5 = e.RatingsCount == 0 
-                ? 0d 
+            // Normalizado a 0-5 (partiendo de scores 1-10)
+            var avg5 = e.RatingsCount == 0
+                ? 0d
                 : (double)e.RatingsSum / (2.0 * e.RatingsCount);
 
             return new EventDTO
@@ -37,10 +37,11 @@ namespace EventsTrackerApi.Models.mappers
                 Price = e.Price
             };
         }
-        
-        public static Event ToModel(EventCreateDto dto, Location location)
+
+        public static Event ToModel(EventCreateDto dto, Location location, int creatorId)
         {
             if (dto == null || location == null) return null;
+
             return new Event
             {
                 Name = dto.Name,
@@ -50,7 +51,7 @@ namespace EventsTrackerApi.Models.mappers
                 StartDateTime = DateTime.SpecifyKind(dto.StartDateTime, DateTimeKind.Utc),
                 EndDateTime = DateTime.SpecifyKind(dto.EndDateTime, DateTimeKind.Utc),
                 Capacity = dto.Capacity,
-                CreatorID = dto.CreatorID,
+                CreatorID = creatorId,
                 Status = dto.Status,
                 FlyerUrl = dto.FlyerUrl,
                 Price = dto.Price
