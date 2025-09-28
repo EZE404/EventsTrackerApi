@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.IO;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
@@ -6,6 +7,7 @@ using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Controllers.request;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventsTrackerApi.Controllers
@@ -40,12 +42,31 @@ namespace EventsTrackerApi.Controllers
         }
 
         [HttpPost]
+        [Consumes("multipart/form-data")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ActionResult<Event>> CreateEvent(EventCreateDto dto)
+        public async Task<ActionResult<Event>> CreateEvent(
+            [FromForm] string name,
+            [FromForm] string description,
+            [FromForm] string placeName,
+            [FromForm] string address,
+            [FromForm] decimal latitude,
+            [FromForm] decimal longitude,
+            [FromForm] int capacity,
+            [FromForm] DateTime startDateTime,
+            [FromForm] DateTime endDateTime,
+            [FromForm] int status,
+            [FromForm] float price,
+            IFormFile flyer)
         {
-            // Validar DTO
-            if (dto == null || dto.Location == null)
-                return BadRequest("Datos de evento o ubicacion invalidos.");
+            // Validar archivo flyer
+            if (flyer == null || flyer.Length == 0)
+                return BadRequest("El archivo de portada (flyer) es requerido.");
+
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+            var extension = Path.GetExtension(flyer.FileName);
+            if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
+                return BadRequest("Formato de imagen no soportado. Use: jpg, jpeg, png, webp o gif.");
 
             // Obtener usuario actual desde el token
             var userIdClaim = User.FindFirst("Id_user")?.Value;
@@ -64,6 +85,40 @@ namespace EventsTrackerApi.Controllers
             {
                 return Forbid(); // 403 - falta de permisos
             }
+
+            // Guardar imagen en wwwroot/uploads/flyers con nombre único
+            var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "flyers");
+            Directory.CreateDirectory(uploadsRoot);
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var filePath = Path.Combine(uploadsRoot, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await flyer.CopyToAsync(stream);
+            }
+
+            // Construir URL pública
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var flyerUrl = $"{baseUrl}/uploads/flyers/{fileName}";
+
+            // Construir DTO y modelos
+            var dto = new EventCreateDto
+            {
+                Name = name,
+                Description = description,
+                Location = new LocationCreateDto
+                {
+                    Address = address,
+                    PlaceName = placeName,
+                    Latitude = latitude,
+                    Longitude = longitude
+                },
+                StartDateTime = startDateTime,
+                EndDateTime = endDateTime,
+                Capacity = capacity,
+                Status = status,
+                Price = price,
+                FlyerUrl = flyerUrl
+            };
 
             // Construir el agregado Event + Location y delegar el guardado a EF Core
             var location = LocationMapper.ToModel(dto.Location);
