@@ -57,5 +57,26 @@ namespace EventsTrackerApi.Models.mappers
                 Price = dto.Price
             };
         }
+        
+        // Sobrecarga para mapear directamente desde el DTO de formulario multipart
+        public static Event ToModel(EventCreateFormDto form, Location location, int creatorId, string flyerUrl)
+        {
+            if (form == null || location == null) return null;
+
+            return new Event
+            {
+                Name = form.Name,
+                Description = form.Description,
+                LocationId = location.Id,
+                Location = location,
+                StartDateTime = DateTime.SpecifyKind(form.StartDateTime, DateTimeKind.Utc),
+                EndDateTime = DateTime.SpecifyKind(form.EndDateTime, DateTimeKind.Utc),
+                Capacity = form.Capacity,
+                CreatorID = creatorId,
+                Status = form.Status,
+                FlyerUrl = flyerUrl,
+                Price = form.Price
+            };
+        }
     }
 }

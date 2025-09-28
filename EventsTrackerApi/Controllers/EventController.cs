@@ -44,27 +44,21 @@ namespace EventsTrackerApi.Controllers
         [HttpPost]
         [Consumes("multipart/form-data")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ActionResult<Event>> CreateEvent(
-            [FromForm] string name,
-            [FromForm] string description,
-            [FromForm] string placeName,
-            [FromForm] string address,
-            [FromForm] decimal latitude,
-            [FromForm] decimal longitude,
-            [FromForm] int capacity,
-            [FromForm] DateTime startDateTime,
-            [FromForm] DateTime endDateTime,
-            [FromForm] int status,
-            [FromForm] float price,
-            IFormFile flyer)
+        public async Task<ActionResult<Event>> CreateEvent([FromForm] EventCreateFormDto form)
         {
+            // Validar modelo
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
             // Validar archivo flyer
-            if (flyer == null || flyer.Length == 0)
+            if (form.Flyer == null || form.Flyer.Length == 0)
                 return BadRequest("El archivo de portada (flyer) es requerido.");
 
             var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-            var extension = Path.GetExtension(flyer.FileName);
+            var extension = Path.GetExtension(form.Flyer.FileName);
             if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
                 return BadRequest("Formato de imagen no soportado. Use: jpg, jpeg, png, webp o gif.");
 
@@ -93,36 +87,17 @@ namespace EventsTrackerApi.Controllers
             var filePath = Path.Combine(uploadsRoot, fileName);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                await flyer.CopyToAsync(stream);
+                await form.Flyer.CopyToAsync(stream);
             }
 
             // Construir URL pública
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            var flyerUrl = $"{baseUrl}/uploads/flyers/{fileName}";
+            //var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            //var flyerUrl = $"{baseUrl}/uploads/flyers/{fileName}";
+            var flyerUrl = $"/uploads/flyers/{fileName}"; // URL relativa para mayor flexibilidad
 
-            // Construir DTO y modelos
-            var dto = new EventCreateDto
-            {
-                Name = name,
-                Description = description,
-                Location = new LocationCreateDto
-                {
-                    Address = address,
-                    PlaceName = placeName,
-                    Latitude = latitude,
-                    Longitude = longitude
-                },
-                StartDateTime = startDateTime,
-                EndDateTime = endDateTime,
-                Capacity = capacity,
-                Status = status,
-                Price = price,
-                FlyerUrl = flyerUrl
-            };
-
-            // Construir el agregado Event + Location y delegar el guardado a EF Core
-            var location = LocationMapper.ToModel(dto.Location);
-            var evt = EventMapper.ToModel(dto, location, userId);
+            // Mapear y construir modelos directamente desde el formulario
+            var location = LocationMapper.ToModel(form);
+            var evt = EventMapper.ToModel(form, location, userId, flyerUrl);
 
             await iEventRepository.AddAsync(evt);
             return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);

@@ -16,6 +16,19 @@ namespace EventsTrackerApi.Models.mappers
                 Longitude = dto.Longitude
             };
         }
+
+        // Overload to map directly from the multipart form DTO
+        public static Location ToModel(EventCreateFormDto form)
+        {
+            if (form == null) return null;
+            return new Location
+            {
+                Address = form.Address,
+                PlaceName = form.PlaceName,
+                Latitude = form.Latitude,
+                Longitude = form.Longitude
+            };
+        }
     }
 }
 
