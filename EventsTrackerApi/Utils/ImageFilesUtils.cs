@@ -69,5 +69,69 @@ namespace EventsTrackerApi.Utils
         /// </summary>
         public static Task<string> SaveUserAvatarAsync(IFormFile file)
             => SaveImageAsync(file, "uploads/avatars");
+
+        /// <summary>
+        /// Elimina en segundo plano una imagen bajo wwwroot dada su URL relativa.
+        /// No bloquea la respuesta HTTP, ignora errores y previene path traversal.
+        /// </summary>
+        /// <param name="relativeUrl">Por ejemplo: "/uploads/avatars/xxx.jpg" o "uploads/flyers/yyy.png"</param>
+        public static void DeleteImageInBackground(string? relativeUrl)
+        {
+            if (string.IsNullOrWhiteSpace(relativeUrl)) return;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+
+                    var normalized = relativeUrl!.Replace('\\', '/').Trim();
+                    if (normalized.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // No se admite URL absoluta
+                        return;
+                    }
+
+                    var relativePath = normalized.TrimStart('/');
+                    var targetPath = Path.Combine(webRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+
+                    var fullWebRoot = Path.GetFullPath(webRoot);
+                    var fullTarget = Path.GetFullPath(targetPath);
+
+                    // Prevenir path traversal
+                    if (!fullTarget.StartsWith(fullWebRoot, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+
+                    const int maxAttempts = 3;
+                    for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                    {
+                        try
+                        {
+                            if (File.Exists(fullTarget))
+                            {
+                                File.Delete(fullTarget);
+                            }
+                            break; // Éxito o archivo no existe
+                        }
+                        catch (IOException)
+                        {
+                            if (attempt == maxAttempts) break;
+                            await Task.Delay(100);
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            // Sin permisos o archivo en uso sin posibilidad de borrar
+                            break;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignorar cualquier error no previsto
+                }
+            });
+        }
     }
 }
