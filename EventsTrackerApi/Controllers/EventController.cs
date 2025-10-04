@@ -1,19 +1,25 @@
+using System;
+using System.Security.Claims;
+using System.IO;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Controllers.request;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using EventsTrackerApi.Utils;
 
 namespace EventsTrackerApi.Controllers
 {
     [Route("api/[controller]")]
-    //[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
     public class EventsController(
             IEventRepository iEventRepository,
             IRepository<Event> iRepository,
-            IRepository<Location> iLocationRepository,
+            IRepository<User> userRepository,
             ILogger<UsersController> _logger
         ) : ControllerBase
     {
@@ -38,18 +44,53 @@ namespace EventsTrackerApi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Event>> CreateEvent(EventCreateDto dto)
+        [Consumes("multipart/form-data")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        public async Task<ActionResult<Event>> CreateEvent([FromForm] EventCreateFormDto form)
         {
-            // Validar DTO
-            if (dto == null || dto.Location == null)
-                return BadRequest("Datos de evento o ubicación inválidos.");
+            // Validar modelo
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
 
-            // Crear Location usando el mapper
-            var location = LocationMapper.ToModel(dto.Location);
-            await iLocationRepository.AddAsync(location);
+            // Validar archivo flyer
+            if (form.Flyer == null || form.Flyer.Length == 0)
+                return BadRequest("El archivo de portada (flyer) es requerido.");
 
-            // Crear Event usando el mapper
-            var evt = EventMapper.ToModel(dto, location);
+            // Obtener usuario actual desde el token
+            var userIdClaim = User.FindFirst("Id_user")?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim))
+                return Unauthorized("Usuario no autenticado.");
+
+            if (!int.TryParse(userIdClaim, out var userId))
+                return Unauthorized("Token invalido.");
+
+            var user = await userRepository.GetByIdAsync(userId);
+            if (user == null)
+                return Unauthorized("Usuario no encontrado.");
+
+            // Validar permisos: debe ser host
+            if (user.IsHost != 1)
+            {
+                return Forbid(); // 403 - falta de permisos
+            }
+
+            // Guardar imagen de flyer usando utilidad compartida
+            string flyerUrl;
+            try
+            {
+                flyerUrl = await ImageFilesUtils.SaveFlyerAsync(form.Flyer);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            // Mapear y construir modelos directamente desde el formulario
+            var location = LocationMapper.ToModel(form);
+            var evt = EventMapper.ToModel(form, location, userId, flyerUrl);
+
             await iEventRepository.AddAsync(evt);
             return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);
         }
