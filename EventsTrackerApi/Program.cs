@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Models;
@@ -43,7 +44,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Configuración de controllers y validación
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
-        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+    {
+        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        // Forzar uso de PascalCase en JSON (creo que es el default y no es necesario). Tampoco es que fuerza el uso de PascalCase, sino que no modifica los nombres
+        // y deja los nombres de las propiedades tal cual están en las clases C#, que por defecto usan PascalCase.
+        // options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+    });
     /*.AddJsonOptions(options =>
      {
          options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -108,6 +114,10 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IRepository<Location>, LocationRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
+
+// Invitations module repositories
+builder.Services.AddScoped<IRepository<EventInvitation>, EventInvitationRepository>();
+builder.Services.AddScoped<IEventInvitationRepository, EventInvitationRepository>();
 
 // Opciones de Firebase (ProjectId y CredentialsPath)
 builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));

@@ -43,6 +43,12 @@ namespace EventsTrackerApi.Data
                 .HasForeignKey(ei => ei.EventID)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Evitar invitaciones duplicadas: un usuario no puede tener más de una invitación por evento
+            modelBuilder.Entity<EventInvitation>(e =>
+            {
+                e.HasIndex(x => new { x.EventID, x.UserID }).IsUnique();
+            });
+
             modelBuilder.Entity<Tag>(e =>
             {
                 e.ToTable("Tags");
