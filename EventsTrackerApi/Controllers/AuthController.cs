@@ -37,11 +37,14 @@ public class AuthController(
         }
 
         var token = GenerateJwtToken(user);
-        return Ok(new
+        var userDto = UserMapper.ToMapper(user); 
+        var response = new LoginResponseDto
         {
             Token = token,
-            Data = UserMapper.ToMapper(user)
-        });
+            Data = userDto
+        };
+
+        return Ok(response);
     }
 
     private string GenerateJwtToken(User user)
@@ -217,5 +220,5 @@ public class AuthController(
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }   
+    }
 }

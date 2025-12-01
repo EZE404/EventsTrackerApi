@@ -21,7 +21,9 @@ public class UserMapper
             TelefonoArea = user.TelefonoArea,
             TelefonoNumero = user.TelefonoNumero,
             IsHost = user.IsHost,
-            FlagUpdateData = user.FlagUpdateData
+            FlagUpdateData = user.FlagUpdateData,
+            AvatarUrl = user.AvatarUrl,
+            Estado = user.Estado.ToString()
         };
     }
 }

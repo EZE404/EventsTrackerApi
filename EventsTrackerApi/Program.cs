@@ -110,6 +110,8 @@ builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IRepository<UserDeviceToken>, DevicesRepository>();
 builder.Services.AddScoped<IDevicesRepository, DevicesRepository>();
+builder.Services.AddScoped<IRepository<UserImage>, UserImageRepository>();
+builder.Services.AddScoped<IUserImageRepository, UserImageRepository>();
 
 // Opciones de Firebase (ProjectId y CredentialsPath)
 builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));
