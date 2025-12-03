@@ -1,182 +1,203 @@
-using System.ComponentModel.DataAnnotations;
 using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
 
-namespace EventsTrackerApi.Controllers;
-
-[Route("api/[controller]")]
-[ApiController]
-[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-public class InvitationsController(
-    IEventInvitationRepository invitationRepo,
-    IEventRepository eventRepo,
-    IUserRepository userRepo,
-    ILogger<InvitationsController> logger
-) : ControllerBase
+namespace EventsTrackerApi.Controllers
 {
-    // 1) GET /api/invitations/event/{eventId}
-    [HttpGet("event/{eventId:int}")]
-    public async Task<ActionResult<IEnumerable<EventInvitationDto>>> GetByEvent(int eventId)
+    [Route("api/invitations")]
+    [ApiController]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public class InvitationsController(
+        IEventInvitationRepository invitationRepo,
+        IEventRepository eventRepo,
+        IUserRepository userRepo) : ControllerBase
     {
-        var list = await invitationRepo.GetByEventIdWithIncludesAsync(eventId);
-        return Ok(list.Select(InvitationMapper.ToDto));
-    }
-
-    // 2) POST /api/invitations
-    [HttpPost]
-    public async Task<ActionResult<EventInvitationDto>> Create([FromBody] CreateInvitationRequest req)
-    {
-        // Autenticación
-        if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
-            return Unauthorized("Usuario no autenticado");
-
-        // Validar evento y permisos: solo dueño del evento puede invitar y debe coincidir con usuario en sesión
-        var ev = await eventRepo.GetByIdAsync(req.EventId);
-        if (ev == null) return NotFound("Evento no encontrado");
-
-        if (ev.CreatorID != req.InviterId || currentUserId != req.InviterId)
-            return Forbid();
-
-        var inviter = await userRepo.GetByIdAsync(req.InviterId);
-        var invitee = await userRepo.GetByIdAsync(req.InviteeId);
-        if (inviter == null || invitee == null) return BadRequest("Usuarios inválidos");
-
-        // No duplicar
-        if (await invitationRepo.ExistsAsync(req.EventId, req.InviteeId))
-            return Conflict("El usuario ya tiene una invitación para este evento");
-
-        var entity = new EventInvitation
+        /// <summary>
+        /// Endpoint 2: Devuelve una lista de todas las invitaciones que el usuario actual ha recibido.
+        /// </summary>
+        [HttpGet("me")]
+        public async Task<ActionResult<IEnumerable<EventInvitationDto>>> GetMyInvitations()
         {
-            EventID = req.EventId,
-            CreatorID = req.InviterId,
-            UserID = req.InviteeId,
-            ResponseStatus = InvitationMapper.NormalizeStatusForStorage("PENDING"),
-            SentDate = DateTime.UtcNow
-        };
-
-        await invitationRepo.AddAsync(entity);
-        var created = await invitationRepo.GetByIdWithIncludesAsync(entity.ID);
-        return CreatedAtAction(nameof(GetByEvent), new { eventId = req.EventId }, InvitationMapper.ToDto(created!));
-    }
-
-    // 3) POST /api/invitations/validate-emails/{eventId}
-    [HttpPost("validate-emails/{eventId:int}")]
-    public async Task<ActionResult<ValidateEmailsResponse>> ValidateEmails(int eventId, [FromBody] ValidateEmailsRequest req)
-    {
-        if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
-            return Unauthorized("Usuario no autenticado");
-
-        var ev = await eventRepo.GetByIdAsync(eventId);
-        if (ev == null) return NotFound("Evento no encontrado");
-        if (ev.CreatorID != currentUserId) return Forbid();
-
-        var response = new ValidateEmailsResponse();
-        var emailAttr = new EmailAddressAttribute();
-
-        // Normalizar, quitar duplicados
-        var emails = req.Emails?.Where(e => !string.IsNullOrWhiteSpace(e))
-                      .Select(e => e.Trim().ToLowerInvariant())
-                      .Distinct()
-                      .ToList() ?? new List<string>();
-
-        foreach (var email in emails)
-        {
-            if (!emailAttr.IsValid(email))
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
             {
-                response.InvalidEmails.Add(email);
-                continue;
+                return Unauthorized("Usuario no autenticado.");
             }
 
-            var user = await userRepo.GetByEmailAsync(email);
-            if (user == null)
+            var invitations = await invitationRepo.GetByReceiverIdWithIncludesAsync(currentUserId);
+            
+            var dtos = invitations.Select(i => InvitationMapper.ToEventInvitationDto(i));
+            
+            return Ok(dtos);
+        }
+
+        /// <summary>
+        /// Endpoint 3: Devuelve una lista de todas las invitaciones enviadas para un evento en particular.
+        /// </summary>
+        [HttpGet("event/{eventId:int}")]
+        public async Task<ActionResult<IEnumerable<EventInvitationDto>>> GetInvitationsByEvent(int eventId)
+        {
+            var invitations = await invitationRepo.GetByEventIdWithIncludesAsync(eventId);
+
+            var dtos = invitations.Select(i => InvitationMapper.ToEventInvitationDto(i, includeEvent: false, includeSender: false));
+
+            return Ok(dtos);
+        }
+
+        /// <summary>
+        /// Endpoint 1: Permite al usuario (el invitado) actualizar el estado de su respuesta a una invitación.
+        /// </summary>
+        [HttpPut("{invitationId:int}/response")]
+        public async Task<ActionResult<EventInvitationDto>> UpdateResponse(int invitationId, [FromBody] UpdateInvitationResponseRequest req)
+        {
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
             {
-                response.InvalidEmails.Add(email);
-                continue;
+                return Unauthorized("Usuario no autenticado.");
             }
 
-            var already = await invitationRepo.ExistsAsync(eventId, user.ID);
-            response.ValidUsers.Add(new ValidatedUserDto
+            if (!Enum.TryParse<InvitationStatus>(req.Status, true, out var statusEnum))
             {
-                Id = user.ID,
-                NombreCompleto = user.NombreCompleto(),
-                Email = user.Email,
-                AlreadyInvited = already
-            });
+                return BadRequest("El estado de la respuesta no es válido.");
+            }
+
+            var invitation = await invitationRepo.GetByIdWithIncludesAsync(invitationId);
+            if (invitation == null)
+            {
+                return NotFound("Invitación no encontrada.");
+            }
+
+            // Solo el receptor de la invitación puede modificar la respuesta.
+            if (invitation.UserId != currentUserId) // Corregido: UserID -> UserId
+            {
+                return Forbid();
+            }
+
+            invitation.ResponseStatus = statusEnum;
+            invitation.ResponseDate = DateUtils.NowInArgentina();
+            
+            await invitationRepo.UpdateAsync(invitation);
+
+            var updatedInvitation = await invitationRepo.GetByIdWithIncludesAsync(invitationId);
+            return Ok(InvitationMapper.ToEventInvitationDto(updatedInvitation!));
         }
 
-        return Ok(response);
-    }
-
-    // 4) POST /api/invitations/batch/{eventId}
-    [HttpPost("batch/{eventId:int}")]
-    public async Task<ActionResult<BatchCreateInvitationsResponse>> BatchCreate(int eventId, [FromBody] BatchCreateInvitationsRequest req)
-    {
-        if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
-            return Unauthorized("Usuario no autenticado");
-
-        var ev = await eventRepo.GetByIdAsync(eventId);
-        if (ev == null) return NotFound("Evento no encontrado");
-        if (ev.CreatorID != currentUserId) return Forbid();
-
-        var emailAttr = new EmailAddressAttribute();
-        var emails = req.Emails?.Where(e => !string.IsNullOrWhiteSpace(e))
-            .Select(e => e.Trim().ToLowerInvariant()).Distinct().ToList() ?? new List<string>();
-
-        var failed = new List<string>();
-        var toCreate = new List<EventInvitation>();
-
-        foreach (var email in emails)
+        /// <summary>
+        /// Endpoint 4: Valida una lista de correos electrónicos para un evento específico.
+        /// </summary>
+        [HttpPost("validate-emails/{eventId:int}")]
+        public async Task<ActionResult<ValidateEmailsResponse>> ValidateEmails(int eventId, [FromBody] ValidateEmailsRequest req)
         {
-            if (!emailAttr.IsValid(email)) { failed.Add(email); continue; }
-            var user = await userRepo.GetByEmailAsync(email);
-            if (user == null) { failed.Add(email); continue; }
-            if (await invitationRepo.ExistsAsync(eventId, user.ID)) { failed.Add(email); continue; }
-
-            toCreate.Add(new EventInvitation
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
             {
-                EventID = eventId,
-                CreatorID = currentUserId,
-                UserID = user.ID,
-                ResponseStatus = InvitationMapper.NormalizeStatusForStorage("PENDING"),
-                SentDate = DateTime.UtcNow
-            });
+                return Unauthorized("Usuario no autenticado.");
+            }
+
+            var ev = await eventRepo.GetByIdAsync(eventId);
+            if (ev == null) return NotFound("Evento no encontrado.");
+            if (ev.CreatorID != currentUserId) return Forbid(); // Asume que Event.CreatorID es correcto
+
+            var response = new ValidateEmailsResponse();
+            var emailAttr = new EmailAddressAttribute();
+            var emails = req.Emails?.Where(e => !string.IsNullOrWhiteSpace(e))
+                                  .Select(e => e.Trim().ToLowerInvariant()).Distinct().ToList() ?? new List<string>();
+
+            foreach (var email in emails)
+            {
+                if (!emailAttr.IsValid(email))
+                {
+                    response.InvalidEmails.Add(email);
+                    continue;
+                }
+
+                var user = await userRepo.GetByEmailAsync(email);
+                if (user == null)
+                {
+                    response.InvalidEmails.Add(email);
+                    continue;
+                }
+
+                var alreadyInvited = await invitationRepo.ExistsAsync(eventId, user.ID); // Asume que User.ID es correcto
+                response.ValidUsers.Add(new ValidatedUserDto
+                {
+                    Id = user.ID,
+                    NombreCompleto = user.NombreCompleto(),
+                    Email = user.Email,
+                    AlreadyInvited = alreadyInvited
+                });
+            }
+
+            return Ok(response);
         }
 
-        if (toCreate.Count > 0)
-            await invitationRepo.AddRangeAsync(toCreate);
-
-        return Ok(new BatchCreateInvitationsResponse
+        /// <summary>
+        /// Endpoint 5: Crea invitaciones en lote para una lista de correos electrónicos.
+        /// </summary>
+        [HttpPost("batch/{eventId:int}")]
+        public async Task<ActionResult<BatchCreateInvitationsResponse>> BatchCreate(int eventId, [FromBody] BatchCreateInvitationsRequest req)
         {
-            Success = true,
-            CreatedCount = toCreate.Count,
-            FailedEmails = failed
-        });
-    }
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
+            {
+                return Unauthorized("Usuario no autenticado.");
+            }
 
-    // 5) PUT /api/invitations/{invitationId}/response
-    [HttpPut("{invitationId:int}/response")]
-    public async Task<ActionResult<EventInvitationDto>> UpdateResponse(int invitationId, [FromBody] UpdateInvitationResponseRequest req)
-    {
-        if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
-            return Unauthorized("Usuario no autenticado");
+            var ev = await eventRepo.GetByIdAsync(eventId);
+            if (ev == null) return NotFound("Evento no encontrado.");
+            if (ev.CreatorID != currentUserId) return Forbid(); // Asume que Event.CreatorID es correcto
 
-        var entity = await invitationRepo.GetByIdWithIncludesAsync(invitationId);
-        if (entity == null) return NotFound();
+            var emails = req.Emails?.Where(e => !string.IsNullOrWhiteSpace(e))
+                                  .Select(e => e.Trim().ToLowerInvariant()).Distinct().ToList() ?? new List<string>();
 
-        // Solo el receptor puede responder la invitación
-        if (entity.UserID != currentUserId)
-            return Forbid();
+            var response = new BatchCreateInvitationsResponse { RequestedCount = emails.Count };
+            var toCreate = new List<EventInvitation>();
+            var emailAttr = new EmailAddressAttribute();
 
-        entity.ResponseStatus = InvitationMapper.NormalizeStatusForStorage(req.ResponseStatus);
-        entity.ResponseDate = DateTime.UtcNow;
-        await invitationRepo.UpdateAsync(entity);
+            foreach (var email in emails)
+            {
+                if (!emailAttr.IsValid(email))
+                {
+                    response.Failed.Add(new FailedInvitationDto { Email = email, Reason = "INVALID_EMAIL" });
+                    continue;
+                }
 
-        var updated = await invitationRepo.GetByIdWithIncludesAsync(invitationId);
-        return Ok(InvitationMapper.ToDto(updated!));
+                var user = await userRepo.GetByEmailAsync(email);
+                if (user == null)
+                {
+                    response.Failed.Add(new FailedInvitationDto { Email = email, Reason = "USER_NOT_FOUND" });
+                    continue;
+                }
+
+                if (await invitationRepo.ExistsAsync(eventId, user.ID))
+                {
+                    response.Failed.Add(new FailedInvitationDto { Email = email, Reason = "ALREADY_INVITED" });
+                    continue;
+                }
+
+                toCreate.Add(new EventInvitation
+                {
+                    EventId = eventId,           // Corregido
+                    CreatorId = currentUserId,   // Corregido
+                    UserId = user.ID,            // Corregido
+                    ResponseStatus = InvitationStatus.SIN_RESPUESTA,
+                    SentDate = DateUtils.NowInArgentina()
+                });
+            }
+
+            if (toCreate.Any())
+            {
+                await invitationRepo.AddRangeAsync(toCreate);
+            }
+
+            response.CreatedCount = toCreate.Count;
+            return Ok(response);
+        }
     }
 }

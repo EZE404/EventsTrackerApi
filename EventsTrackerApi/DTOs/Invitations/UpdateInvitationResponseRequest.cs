@@ -1,6 +1,16 @@
-namespace EventsTrackerApi.DTOs.Invitations;
+using System.ComponentModel.DataAnnotations;
 
-public class UpdateInvitationResponseRequest
+namespace EventsTrackerApi.DTOs.Invitations
 {
-    public string ResponseStatus { get; set; } = string.Empty;
+    /// <summary>
+    /// DTO para el cuerpo de la solicitud de actualización de respuesta a una invitación.
+    /// </summary>
+    public class UpdateInvitationResponseRequest
+    {
+        /// <summary>
+        /// El nuevo estado de la respuesta (ej. "ACEPTADA", "RECHAZADA").
+        /// </summary>
+        [Required]
+        public string Status { get; set; }
+    }
 }

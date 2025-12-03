@@ -1,4 +1,5 @@
 using EventsTrackerApi.DTOs;
+using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
 
 namespace EventsTrackerApi.Models.mappers
@@ -76,6 +77,25 @@ namespace EventsTrackerApi.Models.mappers
                 Status = form.Status,
                 FlyerUrl = flyerUrl,
                 Price = form.Price
+            };
+        }
+
+        /// <summary>
+        /// Convierte una entidad Event a un DTO de resumen (EventSummaryDto).
+        /// </summary>
+        /// <param name="ev">La entidad Event a convertir.</param>
+        /// <returns>Un EventSummaryDto o null si la entrada es null.</returns>
+        public static EventSummaryDto ToEventSummaryDto(Event ev)
+        {
+            if (ev == null)
+            {
+                return null;
+            }
+
+            return new EventSummaryDto
+            {
+                Id = ev.ID,
+                Name = ev.Name
             };
         }
     }

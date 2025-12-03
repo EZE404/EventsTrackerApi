@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventsTrackerApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251118205629_AddUniqueIndex_EventInvitation_Event_User")]
-    partial class AddUniqueIndex_EventInvitation_Event_User
+    [Migration("20251203011353_UpdateEventInvitationSchema")]
+    partial class UpdateEventInvitationSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -83,16 +83,16 @@ namespace EventsTrackerApi.Migrations
 
             modelBuilder.Entity("EventsTrackerApi.Models.EventInvitation", b =>
                 {
-                    b.Property<int>("ID")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ID"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CreatorID")
+                    b.Property<int>("CreatorId")
                         .HasColumnType("int");
 
-                    b.Property<int>("EventID")
+                    b.Property<int>("EventId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("ResponseDate")
@@ -100,22 +100,21 @@ namespace EventsTrackerApi.Migrations
 
                     b.Property<string>("ResponseStatus")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("SentDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("UserID")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
-                    b.HasKey("ID");
+                    b.HasKey("Id");
 
-                    b.HasIndex("CreatorID");
+                    b.HasIndex("CreatorId");
 
-                    b.HasIndex("UserID");
+                    b.HasIndex("UserId");
 
-                    b.HasIndex("EventID", "UserID")
+                    b.HasIndex("EventId", "UserId")
                         .IsUnique();
 
                     b.ToTable("EventInvitations");
@@ -358,19 +357,19 @@ namespace EventsTrackerApi.Migrations
                 {
                     b.HasOne("EventsTrackerApi.Models.User", "Creator")
                         .WithMany("CreatedInvitations")
-                        .HasForeignKey("CreatorID")
+                        .HasForeignKey("CreatorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("EventsTrackerApi.Models.Event", "Event")
                         .WithMany("Invitations")
-                        .HasForeignKey("EventID")
+                        .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EventsTrackerApi.Models.User", "User")
                         .WithMany("ReceivedInvitations")
-                        .HasForeignKey("UserID")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

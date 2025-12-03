@@ -1,49 +1,20 @@
-namespace EventsTrackerApi.DTOs.Invitations;
-
-public class EventInvitationDto
+namespace EventsTrackerApi.DTOs.Invitations
 {
-    public int Id { get; set; }
-    public int EventID { get; set; }
-    public int ReceiverID { get; set; }
-    public int SenderID { get; set; }
-    public string ResponseStatus { get; set; } = string.Empty;
-    public DateTime SentDate { get; set; }
-    public DateTime? ResponseDate { get; set; }
-
-    public UserLiteDto? Sender { get; set; }
-    public UserLiteDto? Receiver { get; set; }
-
-    public ValidatedUserDto? InvitedUser { get; set; }
-    public ValidatedUserDto? InvitedBy { get; set; }
-
-    public EventLiteDto? Event { get; set; }
-
-    public string? Status { get; set; }
-}
-
-public class UserLiteDto
-{
-    public int Id { get; set; }
-    public string? Dni { get; set; }
-    public string FirstName { get; set; } = string.Empty;
-    public string LastName { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string? Direccion { get; set; }
-    public string? TelefonoArea { get; set; }
-    public string? TelefonoNumero { get; set; }
-    public int IsHost { get; set; }
-}
-
-public class EventLiteDto
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-}
-
-public class ValidatedUserDto
-{
-    public int Id { get; set; }
-    public string NombreCompleto { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public bool AlreadyInvited { get; set; }
+    /// <summary>
+    /// DTO principal para representar una invitación a un evento.
+    /// Esta es la estructura de datos que se intercambia con el cliente (app Android).
+    /// </summary>
+    public class EventInvitationDto
+    {
+        public int Id { get; set; }
+        public int EventId { get; set; }
+        public int SenderId { get; set; }
+        public int ReceiverId { get; set; }
+        public string Status { get; set; }
+        public string SentAt { get; set; }
+        public string? ResponseAt { get; set; }
+        public EventSummaryDto? Event { get; set; }
+        public UserSummaryDto? Sender { get; set; }
+        public UserSummaryDto? Receiver { get; set; }
+    }
 }

@@ -10,7 +10,7 @@ using EventsTrackerApi.Models;
 using Microsoft.OpenApi.Models;
 using EventsTrackerApi.Service;
 using EventsTrackerApi.Job;
-
+using Microsoft.AspNetCore.Diagnostics;
 var builder = WebApplication.CreateBuilder(args);
 // Cargar User Secrets en modo Desarrollo
 if (builder.Environment.IsDevelopment())
@@ -150,6 +150,26 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.UseHttpsRedirection();
+// Middleware de manejo de excepciones global
+app.UseExceptionHandler(appError =>
+{
+    appError.Run(async context =>
+    {
+        context.Response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
+ 
+        var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
+        if (contextFeature != null)
+        {
+            // En desarrollo, muestra el error completo. En producción, un mensaje genérico.
+            var errorMessage = app.Environment.IsDevelopment()
+                ? $"Error: {contextFeature.Error.Message}\nStack Trace: {contextFeature.Error.StackTrace}"
+                : "Ha ocurrido un error. Por favor, intente más tarde.";
+ 
+            await context.Response.WriteAsJsonAsync(new { message = errorMessage });
+        }
+    });
+});
 app.UseAuthentication();
 app.UseAuthorization();
 

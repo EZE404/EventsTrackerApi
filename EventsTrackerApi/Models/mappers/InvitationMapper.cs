@@ -1,83 +1,52 @@
 using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Utils;
 
-namespace EventsTrackerApi.Models.mappers;
-
-public static class InvitationMapper
+namespace EventsTrackerApi.Models.mappers
 {
-    public static EventInvitationDto ToDto(EventInvitation ei)
+    /// <summary>
+    /// Mapper para la entidad EventInvitation.
+    /// Se encarga de convertir la entidad de dominio a su DTO correspondiente.
+    /// </summary>
+    public static class InvitationMapper
     {
-        return new EventInvitationDto
+        /// <summary>
+        /// Convierte una entidad EventInvitation a su DTO (EventInvitationDto).
+        /// Delega la conversión de las entidades anidadas (Event, User) a sus respectivos mappers.
+        /// </summary>
+        /// <param name="invitation">La entidad EventInvitation a convertir.</param>
+        /// <param name="includeEvent">Flag para incluir o no el objeto anidado del Evento.</param>
+        /// <param name="includeSender">Flag para incluir o no el objeto anidado del Remitente (Sender).</param>
+        /// <returns>Un EventInvitationDto.</returns>
+        public static EventInvitationDto ToEventInvitationDto(
+            EventInvitation invitation,
+            bool includeEvent = true,
+            bool includeSender = true)
         {
-            Id = ei.ID,
-            EventID = ei.EventID,
-            ReceiverID = ei.UserID,
-            SenderID = ei.CreatorID,
-            ResponseStatus = NormalizeStatusForClient(ei.ResponseStatus),
-            SentDate = DateTime.SpecifyKind(ei.SentDate, DateTimeKind.Utc),
-            ResponseDate = ei.ResponseDate.HasValue ? DateTime.SpecifyKind(ei.ResponseDate.Value, DateTimeKind.Utc) : null,
-            Sender = ToUserLite(ei.Creator),
-            Receiver = ToUserLite(ei.User),
-            InvitedUser = new ValidatedUserDto
+            if (invitation == null)
             {
-                Id = ei.User?.ID ?? ei.UserID,
-                NombreCompleto = ei.User?.NombreCompleto() ?? string.Empty,
-                Email = ei.User?.Email ?? string.Empty,
-                AlreadyInvited = true
-            },
-            InvitedBy = new ValidatedUserDto
+                return null;
+            }
+
+            return new EventInvitationDto
             {
-                Id = ei.Creator?.ID ?? ei.CreatorID,
-                NombreCompleto = ei.Creator?.NombreCompleto() ?? string.Empty,
-                Email = ei.Creator?.Email ?? string.Empty,
-                AlreadyInvited = false
-            },
-            Event = ei.Event != null ? new EventLiteDto { Id = ei.Event.ID, Name = ei.Event.Name } : null,
-            Status = NormalizeStatusForClient(ei.ResponseStatus)
-        };
-    }
+                Id = invitation.Id,
+                EventId = invitation.EventId,
+                SenderId = invitation.CreatorId,
+                ReceiverId = invitation.UserId,
+                
+                // Convierte el enum a su representación en string (ej. "ACEPTADA")
+                Status = invitation.ResponseStatus.ToString(),
+                
+                // Utiliza DateUtils para convertir las fechas a string UTC
+                SentAt = DateUtils.ToUtcString(invitation.SentDate),
+                ResponseAt = DateUtils.ToUtcString(invitation.ResponseDate),
 
-    public static UserLiteDto? ToUserLite(User? u) => u == null ? null : new UserLiteDto
-    {
-        Id = u.ID,
-        Dni = u.Dni,
-        FirstName = u.FirstName,
-        LastName = u.LastName,
-        Email = u.Email,
-        Direccion = u.Direccion,
-        TelefonoArea = u.TelefonoArea,
-        TelefonoNumero = u.TelefonoNumero,
-        IsHost = u.IsHost
-    };
-
-    // Mapea valores almacenados a etiquetas que espera la UI (es/EN)
-    public static string NormalizeStatusForClient(string? status)
-    {
-        var s = status?.Trim().ToUpperInvariant();
-        return s switch
-        {
-            "PENDING" => "Pendiente",
-            "ACCEPTED" => "Aceptada",
-            "REJECTED" => "Rechazada",
-            "PENDIENTE" => "Pendiente",
-            "ACEPTADA" => "Aceptada",
-            "RECHAZADA" => "Rechazada",
-            _ => "Pendiente"
-        };
-    }
-
-    // Convierte input de cliente a forma canónica que guardamos
-    public static string NormalizeStatusForStorage(string? status)
-    {
-        var s = status?.Trim().ToUpperInvariant();
-        return s switch
-        {
-            "ACEPTADA" => "ACCEPTED",
-            "RECHAZADA" => "REJECTED",
-            "PENDIENTE" => "PENDING",
-            "ACCEPTED" => "ACCEPTED",
-            "REJECTED" => "REJECTED",
-            _ => "PENDING"
-        };
+                // Delega la conversión de las entidades anidadas a sus mappers específicos
+                Event = includeEvent ? EventMapper.ToEventSummaryDto(invitation.Event) : null,
+                Sender = includeSender ? UserMapper.ToUserSummaryDto(invitation.Creator) : null,
+                Receiver = UserMapper.ToUserSummaryDto(invitation.User)
+            };
+        }
     }
 }
