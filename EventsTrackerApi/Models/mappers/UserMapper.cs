@@ -1,27 +1,51 @@
 using EventsTrackerApi.Controllers.response;
+using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
-namespace EventsTrackerApi.Models.mappers;
 
-public class UserMapper
+namespace EventsTrackerApi.Models.mappers
 {
-    public static UserDto? ToMapper(User user)
+    public class UserMapper
     {
-        if (user == null) return null;
-
-        return new UserDto
+        public static UserDto? ToMapper(User user)
         {
-            Id = user.ID,
-            Dni = user.Dni,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            Direccion = user.Direccion,
-            FechaCreacion = user.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss"),
-            FechaActualizacion = user.FechaActualizacion.ToString("yyyy-MM-ddTHH:mm:ss"),
-            TelefonoArea = user.TelefonoArea,
-            TelefonoNumero = user.TelefonoNumero,
-            IsHost = user.IsHost,
-            FlagUpdateData = user.FlagUpdateData
-        };
+            if (user == null) return null;
+
+            return new UserDto
+            {
+                Id = user.ID,
+                Dni = user.Dni,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                Email = user.Email,
+                Direccion = user.Direccion,
+                FechaCreacion = user.FechaCreacion.ToString("yyyy-MM-ddTHH:mm:ss"),
+                FechaActualizacion = user.FechaActualizacion.ToString("yyyy-MM-ddTHH:mm:ss"),
+                TelefonoArea = user.TelefonoArea,
+                TelefonoNumero = user.TelefonoNumero,
+                IsHost = user.IsHost,
+                FlagUpdateData = user.FlagUpdateData
+            };
+        }
+
+        /// <summary>
+        /// Convierte una entidad User a un DTO de resumen (UserSummaryDto).
+        /// Utilizado para anidar información del usuario dentro de otros DTOs.
+        /// </summary>
+        /// <param name="user">La entidad User a convertir.</param>
+        /// <returns>Un UserSummaryDto o null si la entrada es null.</returns>
+        public static UserSummaryDto ToUserSummaryDto(User user)
+        {
+            if (user == null)
+            {
+                return null;
+            }
+
+            return new UserSummaryDto
+            {
+                Id = user.ID,
+                NombreCompleto = user.NombreCompleto(),
+                Email = user.Email
+            };
+        }
     }
 }
