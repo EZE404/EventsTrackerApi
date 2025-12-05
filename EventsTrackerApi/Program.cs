@@ -117,6 +117,10 @@ builder.Services.AddScoped<IEmailSender, EmailSender>();
 builder.Services.AddScoped<IRepository<UserDeviceToken>, DevicesRepository>();
 builder.Services.AddScoped<IDevicesRepository, DevicesRepository>();
 
+// Posts module repositories
+builder.Services.AddScoped<IRepository<EventPost>, EventPostRepository>();
+builder.Services.AddScoped<IEventPostRepository, EventPostRepository>();
+
 // Invitations module repositories
 builder.Services.AddScoped<IRepository<EventInvitation>, EventInvitationRepository>();
 builder.Services.AddScoped<IEventInvitationRepository, EventInvitationRepository>();

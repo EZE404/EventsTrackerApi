@@ -20,6 +20,27 @@ namespace EventsTrackerApi.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // --- INICIO: Configuración para EventPost ---
+            modelBuilder.Entity<EventPost>(e =>
+            {
+                e.ToTable("EventPosts");
+
+                // Relación con User: Un usuario puede tener muchos posts.
+                // Si se elimina el usuario, sus posts se eliminan en cascada.
+                e.HasOne(p => p.User)
+                    .WithMany(u => u.Posts)
+                    .HasForeignKey(p => p.UserID)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relación con Event: Un evento puede tener muchos posts.
+                // Si se elimina el evento, sus posts se eliminan en cascada.
+                e.HasOne(p => p.Event)
+                    .WithMany(ev => ev.Posts)
+                    .HasForeignKey(p => p.EventID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+            // --- FIN: Configuración para EventPost ---
+
             // --- INICIO: Configuración para Invitaciones ---
 
             // Configura la conversión del enum InvitationStatus a string para la base de datos.
