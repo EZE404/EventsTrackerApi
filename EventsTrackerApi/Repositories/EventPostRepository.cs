@@ -24,7 +24,7 @@ namespace EventsTrackerApi.Repositories
             return await context.EventPosts
                 .Include(p => p.User) // Incluye la entidad User relacionada para evitar N+1 queries.
                 .Where(p => p.EventID == eventId)
-                .OrderByDescending(p => p.CreationDate) // Ordena para mostrar los comentarios más nuevos primero.
+                .OrderBy(p => p.CreationDate) // antiguos → nuevos
                 .ToListAsync();
         }
     }

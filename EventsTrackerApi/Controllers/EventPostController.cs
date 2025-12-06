@@ -1,6 +1,7 @@
 using EventsTrackerApi.DTOs.Posts;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
@@ -9,20 +10,12 @@ using System.Threading.Tasks;
 
 namespace EventsTrackerApi.Controllers
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [ApiController]
-    [Route("posts")]
-    public class EventPostController : ControllerBase
+    [Route("api/posts")]
+    public class EventPostController(IEventPostRepository eventPostRepository, IEventRepository eventRepository)
+        : ControllerBase
     {
-        private readonly IEventPostRepository _eventPostRepository;
-        private readonly IEventRepository _eventRepository;
-
-        public EventPostController(IEventPostRepository eventPostRepository, IEventRepository eventRepository)
-        {
-            _eventPostRepository = eventPostRepository;
-            _eventRepository = eventRepository;
-        }
-
         /// <summary>
         /// Obtiene todos los posts de un evento específico.
         /// </summary>
@@ -32,7 +25,7 @@ namespace EventsTrackerApi.Controllers
         [HttpGet("event/{eventId}")]
         public async Task<IActionResult> GetPostsByEvent(int eventId)
         {
-            var posts = await _eventPostRepository.GetByEventIdAsync(eventId);
+            var posts = await eventPostRepository.GetByEventIdAsync(eventId);
             var postDtos = posts.Select(p => PostMapper.ToEventPostDto(p));
             
             // Se anula el evento anidado en cada post para no enviar información redundante,
@@ -60,10 +53,13 @@ namespace EventsTrackerApi.Controllers
             }
 
             // Se obtiene el ID del usuario autenticado desde el token JWT.
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var userId))
+            {
+                return Unauthorized("Usuario no autenticado o inexistente.");
+            }
 
             // Se verifica que el evento al que se quiere comentar exista.
-            var eventExists = await _eventRepository.GetByIdAsync(createPostRequest.EventId);
+            var eventExists = await eventRepository.GetByIdAsync(createPostRequest.EventId);
             if (eventExists == null)
             {
                 return NotFound($"No se encontró el evento con ID {createPostRequest.EventId}.");
@@ -73,16 +69,17 @@ namespace EventsTrackerApi.Controllers
             var newPost = PostMapper.ToEventPost(createPostRequest, userId);
 
             // Se guarda el nuevo post en la base de datos.
-            await _eventPostRepository.AddAsync(newPost);
+            await eventPostRepository.AddAsync(newPost);
 
             // Para la respuesta, se necesita el post con la info del usuario cargada.
             // Se podría hacer otra consulta, pero para optimizar, podemos cargarla manualmente
             // si tuviéramos el repositorio de usuarios aquí, o simplemente recargar el post.
-            var createdPost = await _eventPostRepository.GetByIdAsync(newPost.ID);
+            var createdPost = await eventPostRepository.GetByIdAsync(newPost.ID);
+            if (createdPost == null) return StatusCode(500, "No se pudo recuperar el post creado.");
             var postDto = PostMapper.ToEventPostDto(createdPost);
 
             // Se anula el evento anidado para no enviar información redundante.
-            postDto.Event = null;
+            //postDto.Event = null;
 
             // Se devuelve una respuesta 201 Created con la ubicación del nuevo recurso (aunque no tengamos un GetById)
             // y el cuerpo del post recién creado.
