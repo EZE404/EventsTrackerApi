@@ -48,7 +48,7 @@ namespace EventsTrackerApi.Controllers
         {
             var invitations = await invitationRepo.GetByEventIdWithIncludesAsync(eventId);
 
-            var dtos = invitations.Select(i => InvitationMapper.ToEventInvitationDto(i, includeEvent: false, includeSender: false));
+            var dtos = invitations.Select(i => InvitationMapper.ToEventInvitationDto(i, includeEvent: true, includeSender: true));
 
             return Ok(dtos);
         }
