@@ -43,7 +43,8 @@ namespace EventsTrackerApi.Models.mappers
             return new UserSummaryDto
             {
                 Id = user.ID,
-                NombreCompleto = user.NombreCompleto(),
+                FirstName = user.FirstName,
+                LastName = user.LastName,
                 Email = user.Email
             };
         }
