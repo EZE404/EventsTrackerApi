@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using EventsTrackerApi.Utils;
 
 namespace EventsTrackerApi.DTOs
 {
@@ -20,9 +22,11 @@ namespace EventsTrackerApi.DTOs
         [Required, MaxLength(120)]
         public string PlaceName { get; set; }
 
+        [ModelBinder(BinderType = typeof(InvariantDecimalModelBinder))]
         [Range(-90, 90)]
         public decimal Latitude { get; set; }
 
+        [ModelBinder(BinderType = typeof(InvariantDecimalModelBinder))]
         [Range(-180, 180)]
         public decimal Longitude { get; set; }
 
