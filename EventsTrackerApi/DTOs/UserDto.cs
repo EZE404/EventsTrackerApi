@@ -15,5 +15,5 @@ public class UserDto
     public int IsHost { get; set; }
     public int FlagUpdateData { get; set; }
     public string? AvatarUrl { get; set; }
-    public string Estado { get; set; }
+    public UserState Estado { get; set; } 
 }

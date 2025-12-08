@@ -23,7 +23,7 @@ public class UserMapper
             IsHost = user.IsHost,
             FlagUpdateData = user.FlagUpdateData,
             AvatarUrl = user.AvatarUrl,
-            Estado = user.Estado.ToString()
+            Estado = (UserState)user.Estado,
         };
     }
 }
