@@ -4,6 +4,7 @@ using EventsTrackerApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventsTrackerApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251110053211_AddUserImage")]
+    partial class AddUserImage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,16 +83,16 @@ namespace EventsTrackerApi.Migrations
 
             modelBuilder.Entity("EventsTrackerApi.Models.EventInvitation", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ID"));
 
-                    b.Property<int>("CreatorId")
+                    b.Property<int>("CreatorID")
                         .HasColumnType("int");
 
-                    b.Property<int>("EventId")
+                    b.Property<int>("EventID")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("ResponseDate")
@@ -97,22 +100,22 @@ namespace EventsTrackerApi.Migrations
 
                     b.Property<string>("ResponseStatus")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("SentDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int>("UserID")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("ID");
 
-                    b.HasIndex("CreatorId");
+                    b.HasIndex("CreatorID");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("EventID");
 
-                    b.HasIndex("EventId", "UserId")
-                        .IsUnique();
+                    b.HasIndex("UserID");
 
                     b.ToTable("EventInvitations");
                 });
@@ -442,19 +445,19 @@ namespace EventsTrackerApi.Migrations
                 {
                     b.HasOne("EventsTrackerApi.Models.User", "Creator")
                         .WithMany("CreatedInvitations")
-                        .HasForeignKey("CreatorId")
+                        .HasForeignKey("CreatorID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("EventsTrackerApi.Models.Event", "Event")
                         .WithMany("Invitations")
-                        .HasForeignKey("EventId")
+                        .HasForeignKey("EventID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EventsTrackerApi.Models.User", "User")
                         .WithMany("ReceivedInvitations")
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("UserID")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 

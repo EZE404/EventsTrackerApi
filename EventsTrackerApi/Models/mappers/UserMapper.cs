@@ -23,7 +23,9 @@ namespace EventsTrackerApi.Models.mappers
                 TelefonoArea = user.TelefonoArea,
                 TelefonoNumero = user.TelefonoNumero,
                 IsHost = user.IsHost,
-                FlagUpdateData = user.FlagUpdateData
+                FlagUpdateData = user.FlagUpdateData,
+                AvatarUrl = user.AvatarUrl,
+                Estado = (UserState)user.Estado,
             };
         }
 

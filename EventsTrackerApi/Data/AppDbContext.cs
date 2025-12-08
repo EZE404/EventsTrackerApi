@@ -14,7 +14,8 @@ namespace EventsTrackerApi.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<EventTag> EventTags { get; set; }
         public DbSet<EventRating> EventRatings { get; set; }
-        public DbSet<UserDeviceToken> UserDeviceTokens { get; set; }
+        public DbSet<UserDeviceToken> UserDeviceTokens { get; set; }        
+        public DbSet<UserImage> UserImages => Set<UserImage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -115,7 +116,7 @@ namespace EventsTrackerApi.Data
                 .OnDelete(DeleteBehavior.Cascade);
             });
 
-          modelBuilder.Entity<UserDeviceToken>(e =>
+            modelBuilder.Entity<UserDeviceToken>(e =>
             {
                 e.ToTable("UserDeviceTokens");
 
@@ -137,7 +138,22 @@ namespace EventsTrackerApi.Data
                 e.HasIndex(x => x.Token).IsUnique();
 
                 e.HasIndex(x => new { x.UserId, x.DeviceId }).IsUnique();
-            }); 
+            });
+
+            modelBuilder.Entity<User>()
+            .HasOne(u => u.Avatar)
+            .WithOne(i => i.User)
+            .HasForeignKey<UserImage>(i => i.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+            
+            modelBuilder.Entity<UserImage>(e =>
+            {
+                e.Property(p => p.ContentType).HasMaxLength(100).IsRequired();
+                e.Property(p => p.Data).IsRequired();
+                e.Property(p => p.Length);
+                e.Property(p => p.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
+                e.HasIndex(p => p.UpdatedAt);
+            });
         }
     }
 }
