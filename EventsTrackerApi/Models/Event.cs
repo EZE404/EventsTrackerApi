@@ -36,6 +36,8 @@ namespace EventsTrackerApi.Models
         public double RatingsSum   { get; set; } = 0;
 
         [NotMapped]
+        // El promedio se calcula para una escala de 5 estrellas.
+        // Como los ratings se guardan de 1 a 10, el promedio (RatingsSum / RatingsCount) se divide por 2.
         public double RatingAverage => RatingsCount == 0 ? 0 : RatingsSum / (2 * RatingsCount);
     }
 }

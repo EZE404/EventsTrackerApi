@@ -21,41 +21,72 @@ namespace EventsTrackerApi.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // --- INICIO: Configuración para EventPost ---
+            modelBuilder.Entity<EventPost>(e =>
+            {
+                e.ToTable("EventPosts");
+
+                // Relación con User: Un usuario puede tener muchos posts.
+                // Si se elimina el usuario, sus posts se eliminan en cascada.
+                e.HasOne(p => p.User)
+                    .WithMany(u => u.Posts)
+                    .HasForeignKey(p => p.UserID)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Relación con Event: Un evento puede tener muchos posts.
+                // Si se elimina el evento, sus posts se eliminan en cascada.
+                e.HasOne(p => p.Event)
+                    .WithMany(ev => ev.Posts)
+                    .HasForeignKey(p => p.EventID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+            // --- FIN: Configuración para EventPost ---
+
+            // --- INICIO: Configuración para Invitaciones ---
+
+            // Configura la conversión del enum InvitationStatus a string para la base de datos.
+            modelBuilder.Entity<EventInvitation>()
+                .Property(e => e.ResponseStatus)
+                .HasConversion<string>();
+
             // Configurar las relaciones entre User y EventInvitation
-
-            // modelBuilder.HasSequence<int>("DniSequence")
-            //    .StartsAt(1)
-            //    .IncrementsBy(1);
-
             modelBuilder.Entity<EventInvitation>()
                 .HasOne(ei => ei.User)
                 .WithMany(u => u.ReceivedInvitations)
-                .HasForeignKey(ei => ei.UserID)
+                .HasForeignKey(ei => ei.UserId) // Corregido
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<EventInvitation>()
                 .HasOne(ei => ei.Creator)
                 .WithMany(u => u.CreatedInvitations)
-                .HasForeignKey(ei => ei.CreatorID)
+                .HasForeignKey(ei => ei.CreatorId) // Corregido
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<EventInvitation>()
                 .HasOne(ei => ei.Event)
                 .WithMany(e => e.Invitations)
-                .HasForeignKey(ei => ei.EventID)
+                .HasForeignKey(ei => ei.EventId) // Corregido
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Evitar invitaciones duplicadas: un usuario no puede tener más de una invitación por evento
+            modelBuilder.Entity<EventInvitation>(e =>
+            {
+                e.HasIndex(x => new { x.EventId, x.UserId }).IsUnique(); // Corregido
+            });
+
+            // --- FIN: Configuración para Invitaciones ---
 
             modelBuilder.Entity<Tag>(e =>
             {
                 e.ToTable("Tags");
                 e.Property(x => x.Name).HasMaxLength(80).IsRequired();
-                e.HasIndex(x => x.Name).IsUnique(); // con utf8mb4_* será case-insensitive
+                e.HasIndex(x => x.Name).IsUnique();
             });
 
             modelBuilder.Entity<EventTag>(e =>
             {
                 e.ToTable("EventTags");
-                e.HasKey(x => new { x.EventId, x.TagId });     // PK compuesta
+                e.HasKey(x => new { x.EventId, x.TagId });
 
                 e.HasOne(x => x.Event)
                     .WithMany(ev => ev.EventTags)
