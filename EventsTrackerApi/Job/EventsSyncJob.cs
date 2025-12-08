@@ -39,7 +39,7 @@ public class EventsSyncJob : BackgroundService
             var data = NotificationDataBuilder.Build(NotificationAction.SyncMeetings);
 
             await _fcm.SendToDivaceTokenAsync(
-                deviceToken: "fIyHgXtLRUCTm1WoZ1KDB1:APA91bFX3QHNhUzESJgC2f0aMAV44BRCGAQCQ7nQgnpxQMEgBy2JpV8baHcpUmKoppEwC8Z_NuREsgimActIEKq_GtUn9uIOT5UWQysXbnEvmDw6hj1Z1cg",
+                deviceToken: "eW2yKeLhSquLb5aCMa5yhF:APA91bGxGXdqqqa5aG1_bS6tyNXMXB_8Up5fXjmW-v2KM1N_BiUMlunLdQoHFpeU-mjFUvDWcDVUPn8bGQSsp_qw7SEW4Z-qhHn8zWc1QyKOhQgsmLhJyRI",
                 title: "Sync de eventos",
                 body: "Se han sincronizado las eventos, con cron",
                 data

@@ -19,6 +19,7 @@ namespace EventsTrackerApi.Controllers;
 [ApiController]
 public class UsersController(
                 IUserRepository userRepository,
+                IUserImageRepository userImageRepository,
                 IRepository<Event> eventRepository,
                 AppDbContext dbContext,
                 IConfiguration configuration,
@@ -30,14 +31,14 @@ public class UsersController(
     private readonly int IS_HOST = 1;
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+    public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
         var users = await userRepository.GetAllAsync();
         return Ok(users.Select(UserMapper.ToMapper));
     }
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<User>> GetUser(int id)
+    public async Task<ActionResult<UserDto>> GetUser(int id)
     {
         var user = await userRepository.GetByIdAsync(id);
         if (user == null) return NotFound();
@@ -47,7 +48,7 @@ public class UsersController(
 
     [HttpPost]
     [AllowAnonymous]
-    public async Task<ActionResult<User>> CreateUser(User user)
+    public async Task<ActionResult<UserDto>> CreateUser(User user)
     {
         var password = user.PasswordHash.IsNullOrEmpty() ? Commons.GeneratePassword(12) : user.PasswordHash;
         user.PasswordHash = Commons.CreatePasswordHash(password);
@@ -56,12 +57,12 @@ public class UsersController(
         user.FechaActualizacion = DateTime.UtcNow;
 
         if (user.FlagUpdateData != 0)
-        {           
+        {
             await SenderEmail.SendUserDataChangeAsync(user.Email, user.FirstName, user.Dni, password);
         }
 
         await userRepository.AddAsync(user);
-        return CreatedAtAction(nameof(GetUser), new { id = user.ID }, user);
+        return CreatedAtAction(nameof(GetUser), new { id = user.ID }, UserMapper.ToMapper(user));
     }
 
     [HttpPut("{id}")]
@@ -163,7 +164,7 @@ public class UsersController(
         return Ok("Cover photo uploaded successfully.");
     }
 
-    [HttpGet("find-by-email")]    
+    [HttpGet("find-by-email")]
     [Authorize]
     public async Task<ActionResult<UserDto>> GetUserByEmail([FromQuery][EmailAddress] string email)
     {
@@ -171,7 +172,7 @@ public class UsersController(
         {
             var user = await userRepository.GetByEmailAsync(email);
 
-            if (user == null) return NotFound("User not found.");
+            if (user == null) return NotFound("User no encontrado.");
 
             return Ok(UserMapper.ToMapper(user));
         }
@@ -184,7 +185,6 @@ public class UsersController(
             });
         }
     }
-
 
     [HttpGet("exist-email")]
     [AllowAnonymous]
@@ -227,5 +227,80 @@ public class UsersController(
             return StatusCode(500, "Error interno al obtener el próximo ID.");
         }
 
+    }
+
+    [Authorize]
+    [HttpPost("{userId:int}/avatar")]
+    [RequestSizeLimit(2_000_000)]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadAvatar(
+       int userId,
+       [FromForm] UploadAvatarRequest request,
+       CancellationToken ct)
+    {
+        if (request?.File == null || request.File.Length == 0)
+            return BadRequest("Archivo requerido.");
+
+        if (!request.File.ContentType.StartsWith("image/"))
+            return BadRequest("Debe ser una imagen.");
+
+        if (request.File.Length > 2_000_000)
+            return BadRequest("Máximo 2MB.");
+
+        var user = await userRepository.FirstOrDefaultAsync(u => u.ID == userId, ct);
+        if (user == null) return NotFound("Usuario no encontrado.");
+
+        try
+        {
+            byte[] bytes;
+            using (var ms = new MemoryStream())
+            {
+                await request.File.CopyToAsync(ms, ct);
+                bytes = ms.ToArray();
+            }
+
+            var existing = await userImageRepository.FirstOrDefaultAsync(x => x.UserId == userId, ct);
+            if (existing is null)
+            {
+                existing = new UserImage
+                {
+                    UserId = userId,
+                    ContentType = request.File.ContentType,
+                    Length = (int)request.File.Length,
+                    Data = bytes,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                await userImageRepository.AddAsync(existing);
+            }
+            else
+            {
+                existing.ContentType = request.File.ContentType;
+                existing.Length = (int)request.File.Length;
+                existing.Data = bytes;
+                existing.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // mantener AvatarUrl como URL interna que sirve la API
+            user.AvatarUrl = $"/api/users/{userId}/avatar";
+
+            await userImageRepository.SaveChangesAsync(ct);
+            return Ok(new { userId, url = user.AvatarUrl });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al subir avatar.");
+            return StatusCode(500, "Error interno al subir avatar.");
+        }
+    }
+
+    // GET: /api/users/{userId}/avatar
+    [Authorize]
+    [HttpGet("{userId:int}/avatar")]
+    public async Task<IActionResult> GetAvatar(int userId, CancellationToken ct)
+    {
+        var img = await userImageRepository.FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        if (img == null) return NotFound();
+        Response.Headers.CacheControl = "public,max-age=3600"; // opcional
+        return File(img.Data, img.ContentType);
     }
 }

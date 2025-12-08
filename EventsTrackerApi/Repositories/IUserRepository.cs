@@ -11,5 +11,6 @@ public interface IUserRepository : IRepository<User>
     Task<bool> UserExists(int id);
     Task<User> ApplyChanges(User existingUser, User user);
     Task<int> GetLastUserIdAsync();
+
 }
 
