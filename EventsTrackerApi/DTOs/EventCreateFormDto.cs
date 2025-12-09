@@ -42,8 +42,9 @@ namespace EventsTrackerApi.DTOs
         [Range(0, int.MaxValue)]
         public int Status { get; set; }
 
-        [Range(0, float.MaxValue)]
-        public float Price { get; set; }
+        [ModelBinder(BinderType = typeof(InvariantDecimalModelBinder))]
+        [Range(0, (double)decimal.MaxValue)]
+        public decimal Price { get; set; }
 
         [Required]
         public IFormFile Flyer { get; set; }
