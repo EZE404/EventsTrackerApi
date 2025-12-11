@@ -31,7 +31,10 @@ namespace EventsTrackerApi.Models.mappers
                 Invitations = new List<object>(),
                 Posts = new List<object>(),
                 LocationId = e.LocationId,
-                Tags = new List<object>(e.EventTags.Select(et => TagMapper.ToMapper(et.Tag))),
+                Tags = e.EventTags?
+                        .Select(et => TagMapper.ToMapper(et.Tag))
+                        .ToList()
+                        ?? new List<TagDto>(),
                 RatingCount = e.RatingsCount,
                 RatingAverage = Math.Round(avg5, 2),
                 RatingSum = e.RatingsSum,
@@ -58,7 +61,7 @@ namespace EventsTrackerApi.Models.mappers
                 Price = dto.Price // La asignación ahora es válida (decimal a decimal)
             };
         }
-        
+
         // Sobrecarga para mapear directamente desde el DTO de formulario multipart
         public static Event ToModel(EventCreateFormDto form, Location location, int creatorId, string flyerUrl)
         {

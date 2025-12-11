@@ -49,6 +49,8 @@ namespace EventsTrackerApi.Repositories
                 .Include(e => e.Location)
                 .Include(e => e.Invitations)
                 .Include(e => e.Posts)
+                .Include(e => e.EventTags)
+                    .ThenInclude(et => et.Tag)  
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.NameDescription))

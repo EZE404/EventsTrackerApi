@@ -1,4 +1,5 @@
 using EventsTrackerApi.Controllers.response;
+using EventsTrackerApi.DTOs;
 using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
 
@@ -50,5 +51,37 @@ namespace EventsTrackerApi.Models.mappers
                 Email = user.Email
             };
         }
+        public static User MapUpdateDtoToUser(UserUpdateDto dto, User user)
+        {
+            if (dto == null || user == null)
+                return user;
+
+            if (!string.IsNullOrWhiteSpace(dto.FirstName))
+                user.FirstName = dto.FirstName;
+
+            if (!string.IsNullOrWhiteSpace(dto.LastName))
+                user.LastName = dto.LastName;
+
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+                user.Email = dto.Email;
+
+            if (!string.IsNullOrWhiteSpace(dto.PhoneArea))
+                user.TelefonoArea = dto.PhoneArea;
+
+            if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                user.TelefonoNumero = dto.PhoneNumber;
+
+            if (!string.IsNullOrWhiteSpace(dto.Address))
+                user.Direccion = dto.Address;
+
+            if (!string.IsNullOrWhiteSpace(dto.Dni))
+                user.Dni = dto.Dni;
+
+            user.FechaActualizacion = DateTime.UtcNow;
+
+            return user;
+        }
+
+
     }
 }

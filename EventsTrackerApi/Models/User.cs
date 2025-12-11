@@ -45,7 +45,8 @@ namespace EventsTrackerApi.Models
         [StringLength(200)]
         public string? Direccion { get; set; }
 
-        [StringLength(5)]
+        [MaxLength(10, ErrorMessage = "El código de área no puede superar 5 caracteres.")]
+
         public string? TelefonoArea { get; set; }
 
         [StringLength(15)]
