@@ -58,7 +58,7 @@ namespace EventsTrackerApi.Models.mappers
                 CreatorID = creatorId,
                 Status = dto.Status,
                 FlyerUrl = dto.FlyerUrl,
-                Price = dto.Price
+                Price = dto.Price // La asignación ahora es válida (decimal a decimal)
             };
         }
 

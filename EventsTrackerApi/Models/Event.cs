@@ -30,7 +30,8 @@ namespace EventsTrackerApi.Models
 
         public int LocationId { get; set; }
 
-        public float Price { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal Price { get; set; }
         
         public int RatingsCount { get; set; } = 0;
         public double RatingsSum   { get; set; } = 0;
