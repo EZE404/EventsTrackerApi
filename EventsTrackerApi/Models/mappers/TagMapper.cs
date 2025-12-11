@@ -4,14 +4,14 @@ namespace EventsTrackerApi.Models.mappers;
 
 public class TagMapper
 {
-    public static TagDto? ToMapper(Tag e) 
+    public static TagDto? ToMapper(Tag tag) 
     {
-        if (e == null) return null;
+        if (tag == null) return null;
 
         return new TagDto
         {
-            Id = e.Id,
-            Name = e.Name
+            Id = tag.Id,
+            Name = tag.Name
         };
     }
 }

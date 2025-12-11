@@ -66,48 +66,35 @@ public class UsersController(
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser([FromBody] User userUpdate)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userUpdate)
     {
-        int id = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
-        var userExists = await userRepository.GetByIdAsync(id);
+        int authenticatedUserId = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
+        Console.WriteLine($"Authenticated User ID: {authenticatedUserId}, Target User ID: {id}, DTO User ID: {userUpdate.Id}");
 
-        if (id != userUpdate.ID) return BadRequest(new
-        {
-            status = "error",
-            message = "No posee permisos."
-        });
+        if (authenticatedUserId != id || id != userUpdate.Id)
+            return BadRequest(new { status = "error", message = "No posee permisos." });
+
+        var userExists = await userRepository.GetByIdAsync(id);
+        if (userExists == null)
+            return NotFound(new { status = "error", message = "Usuario no encontrado" });
 
         if (!ModelState.IsValid)
-        {
             return BadRequest(ModelState);
-        }
-
-        if (!TryValidateModel(userExists))
-        {
-            return BadRequest(ModelState);
-        }
 
         try
         {
-            // User? user = await userRepository.UpdateAsync(userUpdate);
-            userExists = await userRepository.ApplyChanges(userExists, userUpdate);
+            User updatedUser = UserMapper.MapUpdateDtoToUser(userUpdate, userExists);
+            await userRepository.ApplyChanges(userExists, updatedUser);
             await userRepository.UpdateUserAsync(userExists);
-            return Ok(new
-            {
-                status = "success",
-                message = $"User with ID {id} updated successfully.",
-                data = UserMapper.ToMapper(userExists)
-            });
+
+            return Ok(UserMapper.ToMapper(userExists));
         }
         catch (Exception ex)
         {
-            return BadRequest(new
-            {
-                status = "error",
-                message = ex.Message
-            });
+            return BadRequest(new { status = "error", message = ex.Message });
         }
     }
+
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id)
@@ -231,7 +218,7 @@ public class UsersController(
 
     [Authorize]
     [HttpPost("{userId:int}/avatar")]
-    [RequestSizeLimit(2_000_000)]
+    [RequestSizeLimit(8_000_000)]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadAvatar(
        int userId,
@@ -244,47 +231,25 @@ public class UsersController(
         if (!request.File.ContentType.StartsWith("image/"))
             return BadRequest("Debe ser una imagen.");
 
-        if (request.File.Length > 2_000_000)
-            return BadRequest("Máximo 2MB.");
+        if (request.File.Length > 8_000_000)
+            return BadRequest("Máximo 8MB.");
 
         var user = await userRepository.FirstOrDefaultAsync(u => u.ID == userId, ct);
         if (user == null) return NotFound("Usuario no encontrado.");
 
         try
         {
-            byte[] bytes;
-            using (var ms = new MemoryStream())
+            string newUrl = await ImageFilesUtils.SaveUserAvatarAsync(request.File);
+            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
             {
-                await request.File.CopyToAsync(ms, ct);
-                bytes = ms.ToArray();
+                ImageFilesUtils.DeleteImageInBackground(user.AvatarUrl);
             }
 
-            var existing = await userImageRepository.FirstOrDefaultAsync(x => x.UserId == userId, ct);
-            if (existing is null)
-            {
-                existing = new UserImage
-                {
-                    UserId = userId,
-                    ContentType = request.File.ContentType,
-                    Length = (int)request.File.Length,
-                    Data = bytes,
-                    UpdatedAt = DateTime.UtcNow
-                };
-                await userImageRepository.AddAsync(existing);
-            }
-            else
-            {
-                existing.ContentType = request.File.ContentType;
-                existing.Length = (int)request.File.Length;
-                existing.Data = bytes;
-                existing.UpdatedAt = DateTime.UtcNow;
-            }
+            user.AvatarUrl = newUrl;
+            //user.UpdatedAt = DateTime.UtcNow;
+            await userRepository.SaveChangesAsync(ct);
 
-            // mantener AvatarUrl como URL interna que sirve la API
-            user.AvatarUrl = $"/api/users/{userId}/avatar";
-
-            await userImageRepository.SaveChangesAsync(ct);
-            return Ok(new { userId, url = user.AvatarUrl });
+            return Ok(new { userId, url = newUrl });
         }
         catch (Exception ex)
         {
