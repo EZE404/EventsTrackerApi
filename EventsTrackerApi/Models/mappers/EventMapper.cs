@@ -1,6 +1,7 @@
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
+using EventsTrackerApi.Utils;
 
 namespace EventsTrackerApi.Models.mappers
 {
@@ -21,8 +22,8 @@ namespace EventsTrackerApi.Models.mappers
                 Name = e.Name,
                 Description = e.Description,
                 Location = e.Location,
-                StartDateTime = e.StartDateTime,
-                EndDateTime = e.EndDateTime,
+                StartDateTime = DateUtils.ToUtcString(e.StartDateTime),
+                EndDateTime = DateUtils.ToUtcString(e.EndDateTime),
                 Capacity = e.Capacity,
                 CreatorID = e.CreatorID,
                 Status = e.Status,
