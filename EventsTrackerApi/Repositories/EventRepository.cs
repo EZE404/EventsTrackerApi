@@ -50,7 +50,7 @@ namespace EventsTrackerApi.Repositories
                 .Include(e => e.Invitations)
                 .Include(e => e.Posts)
                 .Include(e => e.EventTags)
-                    .ThenInclude(et => et.Tag)  
+                    .ThenInclude(et => et.Tag)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(request.NameDescription))
@@ -63,7 +63,27 @@ namespace EventsTrackerApi.Repositories
 
             if (request.Status.HasValue)
             {
-                query = query.Where(e => e.Status == request.Status.GetHashCode()); // TODO: status, hacer el estado ya q es numerico, y creer un enum
+                query = query.Where(e => e.Status == request.Status.GetHashCode());
+            }
+
+            if ((request.OnlyInvited || request.MyEventsFlag) && request.UserId.HasValue)
+            {
+                var uid = request.UserId.Value;
+
+                if (request.OnlyInvited && request.MyEventsFlag)
+                {
+                    query = query.Where(e =>
+                        e.CreatorID == uid ||
+                        e.Invitations.Any(i => i.UserId == uid));
+                }
+                else if (request.OnlyInvited)
+                {
+                    query = query.Where(e => e.Invitations.Any(i => i.UserId == uid));
+                }
+                else
+                {
+                    query = query.Where(e => e.CreatorID == uid);
+                }
             }
 
             query = request.Asc
@@ -100,7 +120,7 @@ namespace EventsTrackerApi.Repositories
                     Score = score
                 });
                 evt.RatingsCount += 1;
-                evt.RatingsSum   += score;
+                evt.RatingsSum += score;
             }
             else
             {
@@ -117,8 +137,8 @@ namespace EventsTrackerApi.Repositories
             await _context.SaveChangesAsync(ct);
             await tx.CommitAsync(ct);
 
-            var avg = evt.RatingsCount == 0 
-                ? 0d 
+            var avg = evt.RatingsCount == 0
+                ? 0d
                 : (double)evt.RatingsSum / (2.0 * evt.RatingsCount);
             return (avg, evt.RatingsCount);
         }
@@ -133,5 +153,5 @@ namespace EventsTrackerApi.Repositories
             var avg = evt.RatingsCount == 0 ? 0 : (double)evt.RatingsSum / evt.RatingsCount;
             return (avg, evt.RatingsCount);
         }
-    }    
+    }
 }

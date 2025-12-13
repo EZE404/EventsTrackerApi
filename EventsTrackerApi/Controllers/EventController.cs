@@ -1,6 +1,3 @@
-using System;
-using System.Security.Claims;
-using System.IO;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
@@ -8,7 +5,6 @@ using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Controllers.request;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EventsTrackerApi.Utils;
 
@@ -54,11 +50,9 @@ namespace EventsTrackerApi.Controllers
                 return ValidationProblem(ModelState);
             }
 
-            // Validar archivo flyer
             if (form.Flyer == null || form.Flyer.Length == 0)
                 return BadRequest("El archivo de portada (flyer) es requerido.");
 
-            // Obtener usuario actual desde el token
             var userIdClaim = User.FindFirst("Id_user")?.Value;
             if (string.IsNullOrWhiteSpace(userIdClaim))
                 return Unauthorized("Usuario no autenticado.");
@@ -70,13 +64,11 @@ namespace EventsTrackerApi.Controllers
             if (user == null)
                 return Unauthorized("Usuario no encontrado.");
 
-            // Validar permisos: debe ser host
             if (user.IsHost != 1)
             {
                 return Forbid(); // 403 - falta de permisos
             }
 
-            // Guardar imagen de flyer usando utilidad compartida
             string flyerUrl;
             try
             {
@@ -87,7 +79,6 @@ namespace EventsTrackerApi.Controllers
                 return BadRequest(ex.Message);
             }
 
-            // Mapear y construir modelos directamente desde el formulario
             var location = LocationMapper.ToModel(form);
             var evt = EventMapper.ToModel(form, location, userId, flyerUrl);
 

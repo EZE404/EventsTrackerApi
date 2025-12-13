@@ -7,5 +7,8 @@ public class EventsFilterDto
     public EventStatus? Status { get; set; }
     public bool Asc { get; set; } = true;
     public int? Page { get; set; }
-    public int? PageSize { get; set; }
+    public int? PageSize { get; set; }    
+    public bool OnlyInvited { get; set; } = false;    
+    public bool MyEventsFlag { get; set; } = false;
+    public int? UserId { get; set; }
 }
