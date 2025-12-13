@@ -1,6 +1,3 @@
-using System;
-using System.Security.Claims;
-using System.IO;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
@@ -8,7 +5,6 @@ using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Controllers.request;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EventsTrackerApi.Utils;
 
@@ -55,11 +51,9 @@ namespace EventsTrackerApi.Controllers
                 return ValidationProblem(ModelState);
             }
 
-            // 2. Valido que el flyer no sea nulo.
             if (form.Flyer == null || form.Flyer.Length == 0)
                 return BadRequest("El archivo de portada (flyer) es requerido.");
 
-            // 3. Obtengo y valido el usuario autenticado desde el token JWT.
             var userIdClaim = User.FindFirst("Id_user")?.Value;
             if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
                 return Unauthorized("Token de usuario inválido o ausente.");
@@ -68,12 +62,12 @@ namespace EventsTrackerApi.Controllers
             if (user == null)
                 return Unauthorized("Usuario no encontrado.");
 
-            // 4. Verifico que el usuario tenga permisos de Host.
             if (user.IsHost != 1)
             {
                 return Forbid(); // 403 Forbidden si no es Host.
             }
 
+            string flyerUrl;
             try
             {
                 // 5. Delega toda la lógica de creación (evento, flyer, tags) al repositorio.
@@ -102,8 +96,12 @@ namespace EventsTrackerApi.Controllers
                 // Capturo excepciones de validación específicas (ej. tipo de archivo de imagen no permitido).
                 return BadRequest(ex.Message);
             }
-            // Si ocurre un error en la transacción del repositorio, se lanzará una excepción
-            // que resultará en un 500 Internal Server Error, lo cual es correcto.
+
+            var location = LocationMapper.ToModel(form);
+            var evt = EventMapper.ToModel(form, location, userId, flyerUrl);
+
+            await iEventRepository.AddAsync(evt);
+            return CreatedAtAction(nameof(GetEvent), new { id = evt.ID }, evt);
         }
 
         [HttpPut("{id:int}")]
