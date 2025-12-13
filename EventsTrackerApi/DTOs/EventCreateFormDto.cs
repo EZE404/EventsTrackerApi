@@ -48,5 +48,10 @@ namespace EventsTrackerApi.DTOs
 
         [Required]
         public IFormFile Flyer { get; set; }
+
+        // Campo para recibir las etiquetas como un string JSON.
+        // El cliente (Android) debe serializar un array de strings a JSON.
+        [FromForm(Name = "tagsJson")]
+        public string TagsJson { get; set; }
     }
 }

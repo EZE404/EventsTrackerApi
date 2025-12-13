@@ -8,8 +8,8 @@ public class EventDTO
     public string Name { get; set; }
     public string? Description { get; set; }
     public Location Location { get; set; }
-    public DateTime StartDateTime { get; set; }
-    public DateTime EndDateTime { get; set; }
+    public String StartDateTime { get; set; }
+    public String EndDateTime { get; set; }
     public int Capacity { get; set; }
     public int CreatorID { get; set; }
     public int Status { get; set; }

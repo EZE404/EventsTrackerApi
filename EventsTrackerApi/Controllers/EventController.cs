@@ -10,7 +10,7 @@ using EventsTrackerApi.Utils;
 
 namespace EventsTrackerApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/events")] // Ruta corregida a 'events' para consistencia
     [ApiController]
     public class EventsController(
             IEventRepository iEventRepository,
@@ -39,12 +39,13 @@ namespace EventsTrackerApi.Controllers
             return Ok(EventMapper.ToMapper(evt));
         }
 
+        // Modifico el método de creación de eventos para manejar también las etiquetas.
         [HttpPost]
         [Consumes("multipart/form-data")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        public async Task<ActionResult<Event>> CreateEvent([FromForm] EventCreateFormDto form)
+        public async Task<ActionResult<EventCreatedDto>> CreateEvent([FromForm] EventCreateFormDto form)
         {
-            // Validar modelo
+            // 1. Valido el modelo como antes.
             if (!ModelState.IsValid)
             {
                 return ValidationProblem(ModelState);
@@ -54,11 +55,8 @@ namespace EventsTrackerApi.Controllers
                 return BadRequest("El archivo de portada (flyer) es requerido.");
 
             var userIdClaim = User.FindFirst("Id_user")?.Value;
-            if (string.IsNullOrWhiteSpace(userIdClaim))
-                return Unauthorized("Usuario no autenticado.");
-
-            if (!int.TryParse(userIdClaim, out var userId))
-                return Unauthorized("Token invalido.");
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized("Token de usuario inválido o ausente.");
 
             var user = await userRepository.GetByIdAsync(userId);
             if (user == null)
@@ -66,16 +64,36 @@ namespace EventsTrackerApi.Controllers
 
             if (user.IsHost != 1)
             {
-                return Forbid(); // 403 - falta de permisos
+                return Forbid(); // 403 Forbidden si no es Host.
             }
 
             string flyerUrl;
             try
             {
-                flyerUrl = await ImageFilesUtils.SaveFlyerAsync(form.Flyer);
+                // 5. Delega toda la lógica de creación (evento, flyer, tags) al repositorio.
+                //    El método del repositorio es transaccional, garantizando la atomicidad.
+                var newEvent = await iEventRepository.CreateEventWithTagsAsync(form, userId);
+
+                // 6. Mapeo el evento completo (con sus tags) al DTO de respuesta específico.
+                var responseDto = new EventCreatedDto
+                {
+                    Id = newEvent.ID,
+                    Name = newEvent.Name,
+                    Description = newEvent.Description,
+                    StartDateTime = newEvent.StartDateTime,
+                    EndDateTime = newEvent.EndDateTime,
+                    Price = newEvent.Price,
+                    FlyerUrl = newEvent.FlyerUrl,
+                    // Mapeo los tags de la relación para la respuesta.
+                    Tags = newEvent.EventTags.Select(et => TagMapper.ToMapper(et.Tag)).ToList()
+                };
+
+                // 7. Devuelvo una respuesta 201 Created con la ubicación del nuevo recurso y el DTO.
+                return CreatedAtAction(nameof(GetEvent), new { id = newEvent.ID }, responseDto);
             }
             catch (ArgumentException ex)
             {
+                // Capturo excepciones de validación específicas (ej. tipo de archivo de imagen no permitido).
                 return BadRequest(ex.Message);
             }
 
@@ -87,12 +105,45 @@ namespace EventsTrackerApi.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> UpdateEvent(int id, Event evt)
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateEvent(int id, [FromForm] EventUpdateDto updateDto)
         {
-            if (id != evt.ID) return BadRequest();
-            await iEventRepository.UpdateAsync(evt);
-            return NoContent();
+            if (id != updateDto.ID)
+            {
+                return BadRequest("El ID de la ruta no coincide con el ID del cuerpo de la solicitud.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            var userIdClaim = User.FindFirst("Id_user")?.Value;
+            if (string.IsNullOrWhiteSpace(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Token de usuario inválido o ausente.");
+            }
+
+            try
+            {
+                await iEventRepository.UpdateEventWithTagsAsync(id, updateDto, userId);
+                return Ok(); // 200 OK
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message); // 404 Not Found
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message); // 403 Forbidden
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message); // 400 Bad Request
+            }
         }
+
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteEvent(int id)
@@ -110,6 +161,8 @@ namespace EventsTrackerApi.Controllers
             var (avg, count) = await iEventRepository.UpsertRatingAsync(eventId, userId, req.Score, ct);
             return Ok(new RatingSummaryDto(Math.Round(avg, 2), count));
         }
+
+
 
         // GET /api/events/{eventId}/ratings/summary
         [HttpGet("{eventId:int}/ratings/summary")]
