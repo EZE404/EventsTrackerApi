@@ -25,6 +25,7 @@ namespace EventsTrackerApi.Controllers
             [FromQuery] EventsFilterDto request
         )
         {
+            request.UserId = request.UserId != null ? request.UserId : Convert.ToInt32(User.FindFirst("Id_user")?.Value);
             var events = await iEventRepository.GetFilteredWithIncludesAsync(request);
 
             var dtoList = events.Select(EventMapper.ToMapper).ToList();
@@ -161,8 +162,6 @@ namespace EventsTrackerApi.Controllers
             var (avg, count) = await iEventRepository.UpsertRatingAsync(eventId, userId, req.Score, ct);
             return Ok(new RatingSummaryDto(Math.Round(avg, 2), count));
         }
-
-
 
         // GET /api/events/{eventId}/ratings/summary
         [HttpGet("{eventId:int}/ratings/summary")]

@@ -19,5 +19,7 @@ namespace EventsTrackerApi.DTOs
         public string Address { get; set; }
 
         public string Dni { get; set; }
+
+        public string Bio { get; set; }
     }
 }
