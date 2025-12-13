@@ -27,6 +27,7 @@ namespace EventsTrackerApi.Models.mappers
                 FlagUpdateData = user.FlagUpdateData,
                 AvatarUrl = user.AvatarUrl,
                 Estado = (UserState)user.Estado,
+                Bio = user.Bio
             };
         }
 
@@ -76,6 +77,9 @@ namespace EventsTrackerApi.Models.mappers
 
             if (!string.IsNullOrWhiteSpace(dto.Dni))
                 user.Dni = dto.Dni;
+            
+            if (!string.IsNullOrWhiteSpace(dto.Bio))
+                user.Bio = dto.Bio;
 
             user.FechaActualizacion = DateTime.UtcNow;
 

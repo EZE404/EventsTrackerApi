@@ -113,6 +113,9 @@ namespace EventsTrackerApi.Repositories
 
             if (!string.IsNullOrEmpty(userDto.TelefonoNumero))
                 existingUser.TelefonoNumero = userDto.TelefonoNumero;
+                
+            if (!string.IsNullOrEmpty(userDto.Bio))
+                existingUser.Bio = userDto.Bio;
 
             // Actualizar la fecha de modificación
             existingUser.FechaActualizacion = DateTime.Now;

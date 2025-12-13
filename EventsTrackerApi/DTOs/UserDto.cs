@@ -16,4 +16,6 @@ public class UserDto
     public int FlagUpdateData { get; set; }
     public string? AvatarUrl { get; set; }
     public UserState Estado { get; set; } 
+    
+    public String? Bio { get; set; } 
 }
