@@ -129,10 +129,10 @@ namespace EventsTrackerApi.Repositories
                 if (updateDto.TagsJson != null)
                 {
                     var newTagNames = System.Text.Json.JsonSerializer.Deserialize<List<string>>(updateDto.TagsJson) ?? new List<string>();
-                    
+
                     // Obtener los tags actuales del evento
                     var currentTagIds = existingEvent.EventTags.Select(et => et.TagId).ToList();
-                    
+
                     // Obtener o crear los objetos Tag para los nombres recibidos
                     var targetTags = await _tagRepository.FindOrCreateTagsAsync(newTagNames);
                     var targetTagIds = targetTags.Select(t => t.Id).ToList();
@@ -203,15 +203,21 @@ namespace EventsTrackerApi.Repositories
 
         public async Task<IEnumerable<Event>> GetFilteredWithIncludesAsync(EventsFilterDto request)
         {
+            var borrador = (int)EventStatus.BORRADOR;
+            var uid = request.UserId;
+
             var query = _context.Set<Event>()
                 .Include(e => e.Creator)
                 .Include(e => e.Location)
                 .Include(e => e.Invitations)
                 .Include(e => e.Posts)
-                .Include(e => e.EventTags)
-                    .ThenInclude(et => et.Tag)
+                .Include(e => e.EventTags).ThenInclude(et => et.Tag)
                 .AsQueryable();
 
+            // 1) Visibilidad: "no ver borradores ajenos"
+            query = query.Where(e => e.Status != borrador || (uid.HasValue && e.CreatorID == uid.Value));
+
+            // 2) 🔎 Filtro texto
             if (!string.IsNullOrWhiteSpace(request.NameDescription))
             {
                 var pattern = $"%{request.NameDescription.Trim()}%";
@@ -220,36 +226,34 @@ namespace EventsTrackerApi.Repositories
                     EF.Functions.Like(e.Description, pattern));
             }
 
+            // 3) Filtro de estado (con BORRADOR especial)
             if (request.Status.HasValue)
             {
-                query = query.Where(e => e.Status == request.Status.GetHashCode());
+                var status = (int)request.Status.Value;
+
+                // Si piden BORRADOR: solo los míos (si no hay uid → no hay resultados)
+                query = query.Where(e =>
+                    e.Status == status &&
+                    (status != borrador || (uid.HasValue && e.CreatorID == uid.Value)));
             }
 
-            if ((request.OnlyInvited || request.MyEventsFlag) && request.UserId.HasValue)
+            // 4) 👤 Flags invitado / mis eventos
+            if ((request.OnlyInvited || request.MyEventsFlag) && uid.HasValue)
             {
-                var uid = request.UserId.Value;
+                var id = uid.Value;
 
-                if (request.OnlyInvited && request.MyEventsFlag)
-                {
-                    query = query.Where(e =>
-                        e.CreatorID == uid ||
-                        e.Invitations.Any(i => i.UserId == uid));
-                }
-                else if (request.OnlyInvited)
-                {
-                    query = query.Where(e => e.Invitations.Any(i => i.UserId == uid));
-                }
-                else
-                {
-                    query = query.Where(e => e.CreatorID == uid);
-                }
+                query = query.Where(e =>
+                    (!request.MyEventsFlag || e.CreatorID == id) &&
+                    (!request.OnlyInvited || e.Invitations.Any(i => i.UserId == id)));
             }
 
+            // 5) Orden
             query = request.Asc
                 ? query.OrderBy(e => e.EndDateTime)
                 : query.OrderByDescending(e => e.EndDateTime);
 
-            if (request.Page.HasValue && request.PageSize.HasValue && request.Page > 0 && request.PageSize > 0)
+            // 6) Paginación
+            if (request.Page is > 0 && request.PageSize is > 0)
             {
                 var skip = (request.Page.Value - 1) * request.PageSize.Value;
                 query = query.Skip(skip).Take(request.PageSize.Value);
