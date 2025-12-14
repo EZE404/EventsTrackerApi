@@ -136,6 +136,7 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.AddSingleton<FcmService>();
 builder.Services.AddHostedService<EventsSyncJob>();
 builder.Services.AddHostedService<EventsForDefeatJob>();
+builder.Services.AddHostedService<InvitationNotificationJob>();
 
 var app = builder.Build();
 

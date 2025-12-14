@@ -194,11 +194,19 @@ namespace EventsTrackerApi.Repositories
                 .FirstOrDefaultAsync(e => e.ID == id, ct);
         }
 
-        public async Task<IEnumerable<Event>> GetEventsEndingBetweenAsync(DateTime startUtc, DateTime endUtc, CancellationToken ct)
+        public async Task<IEnumerable<Event>> GetEventsEndingBetweenAsync(
+            DateTime startUtc,
+            DateTime endUtc,
+            CancellationToken ct)
         {
-            return await _context.Events.AsNoTracking()
-                        .Where(e => e.EndDateTime >= startUtc && e.EndDateTime < endUtc)
-                        .ToListAsync(ct);
+            return await _context.Events
+                .AsNoTracking()
+                .Where(e =>
+                    e.EndDateTime >= startUtc &&
+                    e.EndDateTime < endUtc &&
+                    e.Status == (int)EventStatus.PUBLICADO
+                )
+                .ToListAsync(ct);
         }
 
         public async Task<IEnumerable<Event>> GetFilteredWithIncludesAsync(EventsFilterDto request)

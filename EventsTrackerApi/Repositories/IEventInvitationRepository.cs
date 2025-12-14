@@ -18,5 +18,8 @@ namespace EventsTrackerApi.Repositories
         /// <param name="receiverId">El ID del usuario receptor.</param>
         /// <returns>Una lista de invitaciones.</returns>
         Task<List<EventInvitation>> GetByReceiverIdWithIncludesAsync(int receiverId);
+        Task<List<EventInvitation>> GetPendingUnnotifiedAsync(CancellationToken ct);
+        Task MarkAsNotifiedAsync(IEnumerable<int> invitationIds, CancellationToken ct);
+
     }
 }

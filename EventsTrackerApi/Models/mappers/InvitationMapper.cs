@@ -18,10 +18,11 @@ namespace EventsTrackerApi.Models.mappers
         /// <param name="includeEvent">Flag para incluir o no el objeto anidado del Evento.</param>
         /// <param name="includeSender">Flag para incluir o no el objeto anidado del Remitente (Sender).</param>
         /// <returns>Un EventInvitationDto.</returns>
-        public static EventInvitationDto ToEventInvitationDto(
+        public static EventInvitationDto? ToEventInvitationDto(
             EventInvitation invitation,
             bool includeEvent = true,
-            bool includeSender = true)
+            bool includeSender = true,
+            bool includeReceiver = false)
         {
             if (invitation == null)
             {
@@ -34,10 +35,10 @@ namespace EventsTrackerApi.Models.mappers
                 EventId = invitation.EventId,
                 SenderId = invitation.CreatorId,
                 ReceiverId = invitation.UserId,
-                
+
                 // Convierte el enum a su representación en string (ej. "ACEPTADA")
                 Status = invitation.ResponseStatus.ToString(),
-                
+
                 // Utiliza DateUtils para convertir las fechas a string UTC
                 SentAt = DateUtils.ToUtcString(invitation.SentDate),
                 ResponseAt = DateUtils.ToUtcString(invitation.ResponseDate),
@@ -45,7 +46,8 @@ namespace EventsTrackerApi.Models.mappers
                 // Delega la conversión de las entidades anidadas a sus mappers específicos
                 Event = includeEvent ? EventMapper.ToEventSummaryDto(invitation.Event) : null,
                 Sender = includeSender ? UserMapper.ToUserSummaryDto(invitation.Creator) : null,
-                Receiver = UserMapper.ToUserSummaryDto(invitation.User)
+               // Receiver = UserMapper.ToUserSummaryDto(invitation.User),                
+                Receiver = includeReceiver ? UserMapper.ToUserSummaryDto(invitation.User) : null
             };
         }
     }
