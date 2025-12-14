@@ -6,11 +6,12 @@ using MailKit.Security;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using EventsTrackerApi.DTOs.Invitations;
 
 namespace EventsTrackerApi.Service;
 
-public class EmailSender: IEmailSender
-{  
+public class EmailSender : IEmailSender
+{
     private readonly EmailSettings _settings;
     private readonly ILogger<EmailSender> _logger;
 
@@ -66,4 +67,12 @@ public class EmailSender: IEmailSender
             Subject = "Actualizar los datos del usuario",
             Body = Commons.HtmlBodyEmailUserDataChange(firstName, dni, plainPassword)
         });
+
+    public Task SendEventInvitationAsync(InvitationEmailModelDto invitationEmailModelDto)
+    => SendAsync(new EmailOptions
+    {
+        To = invitationEmailModelDto.To,
+        Subject = $"Te invitaron al evento: {invitationEmailModelDto.EventName}",
+        Body = Commons.HtmlBodyInvitationEmail(invitationEmailModelDto)
+    });
 }

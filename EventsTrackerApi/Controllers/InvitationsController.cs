@@ -2,6 +2,7 @@ using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Service;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -16,6 +17,8 @@ namespace EventsTrackerApi.Controllers
     public class InvitationsController(
         IEventInvitationRepository invitationRepo,
         IEventRepository eventRepo,
+        IEmailSender invitationEmailService,
+        ILogger<InvitationsController> logger,
         IUserRepository userRepo) : ControllerBase
     {
         /// <summary>
@@ -150,6 +153,8 @@ namespace EventsTrackerApi.Controllers
             var ev = await eventRepo.GetByIdAsync(eventId);
             if (ev == null) return NotFound("Evento no encontrado.");
             if (ev.CreatorID != currentUserId) return Forbid(); // Asume que Event.CreatorID es correcto
+            var sender = await userRepo.GetByIdAsync(currentUserId);
+            var senderName = sender?.NombreCompleto() ?? "Un usuario";
 
             var emails = req.Emails?.Where(e => !string.IsNullOrWhiteSpace(e))
                                   .Select(e => e.Trim().ToLowerInvariant()).Distinct().ToList() ?? new List<string>();
@@ -157,6 +162,9 @@ namespace EventsTrackerApi.Controllers
             var response = new BatchCreateInvitationsResponse { RequestedCount = emails.Count };
             var toCreate = new List<EventInvitation>();
             var emailAttr = new EmailAddressAttribute();
+            
+            // para mandar mails SOLO a los creados
+            var createdMailQueue = new List<(string Email, string ReceiverName)>();
 
             foreach (var email in emails)
             {
@@ -167,6 +175,7 @@ namespace EventsTrackerApi.Controllers
                 }
 
                 var user = await userRepo.GetByEmailAsync(email);
+
                 if (user == null)
                 {
                     response.Failed.Add(new FailedInvitationDto { Email = email, Reason = "USER_NOT_FOUND" });
@@ -181,17 +190,45 @@ namespace EventsTrackerApi.Controllers
 
                 toCreate.Add(new EventInvitation
                 {
-                    EventId = eventId,           // Corregido
-                    CreatorId = currentUserId,   // Corregido
-                    UserId = user.ID,            // Corregido
+                    EventId = eventId,
+                    CreatorId = currentUserId,
+                    UserId = user.ID,
                     ResponseStatus = InvitationStatus.SIN_RESPUESTA,
                     SentDate = DateUtils.NowInArgentina()
                 });
+
+                createdMailQueue.Add((user.Email, user.NombreCompleto()));
             }
 
             if (toCreate.Any())
             {
                 await invitationRepo.AddRangeAsync(toCreate);
+            }
+
+            try
+            {
+                // envío simple (secuencial) — ok para pocos emails
+                for (int i = 0; i < toCreate.Count; i++)
+                {
+                    var inv = toCreate[i];
+                    var (email, receiverName) = createdMailQueue[i];
+
+                    await invitationEmailService.SendEventInvitationAsync(
+                          new InvitationEmailModelDto(
+                            To: email,
+                            ReceiverName: receiverName,
+                            SenderName: senderName,
+                            EventName: ev.Name,
+                            InvitationId: inv.Id,
+                            EventDate: ev.StartDateTime        // si existe
+                          //  EventLocation: ev.Location // si existe
+        )
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Falló el envío de emails de invitación para eventId={EventId}", eventId);
             }
 
             response.CreatedCount = toCreate.Count;

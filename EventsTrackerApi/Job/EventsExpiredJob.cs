@@ -79,7 +79,7 @@ public class EventsForDefeatJob(
 
             if (tokens.Count == 0)
             {
-                _logger.LogInformation("No hay dispositivos activos para notificar.");
+                _logger.LogWarning("No hay dispositivos activos para notificar.");
                 return;
             }
             _logger.LogInformation("Se encontraron {Count} tokens de dispositivos activos.", tokens.Count);
@@ -100,7 +100,7 @@ public class EventsForDefeatJob(
             
             if (work.Count == 0)
             {
-                _logger.LogInformation("No hay usuarios con tokens válidos para notificar.");
+                _logger.LogWarning("No hay usuarios con tokens válidos para notificar.");
                 return;
             }
 
