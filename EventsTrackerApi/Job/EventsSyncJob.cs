@@ -8,7 +8,7 @@ public class EventsSyncJob : BackgroundService
 {
     private readonly ILogger<EventsSyncJob> _logger;
     private readonly FcmService _fcm;
-    private readonly int MINUTES_TO_SYNC = 180;
+    private readonly int MINUTES_TO_SYNC = 3;
 
     public EventsSyncJob(ILogger<EventsSyncJob> logger, FcmService fcm)
     {
@@ -38,12 +38,12 @@ public class EventsSyncJob : BackgroundService
 
             var data = NotificationDataBuilder.Build(NotificationAction.SyncMeetings);
 
-            await _fcm.SendToDivaceTokenAsync(
-                deviceToken: "eW2yKeLhSquLb5aCMa5yhF:APA91bGxGXdqqqa5aG1_bS6tyNXMXB_8Up5fXjmW-v2KM1N_BiUMlunLdQoHFpeU-mjFUvDWcDVUPn8bGQSsp_qw7SEW4Z-qhHn8zWc1QyKOhQgsmLhJyRI",
+            /*await _fcm.SendToDivaceTokenAsync(
+                deviceToken: "cWyWQAs8QlSUpa0lyWEw6H:APA91bFdE8aWejd3q1-EA0eRsluSovwxv0IB2K8ePG4vtkByHrwDtb1xq36uBW46w40sAyBZ5sIR7u2QDudd4ZgSsov0GSU56HHPD9yR9PhnwbQClA_0t-U",
                 title: "Sync de eventos",
                 body: "Se han sincronizado las eventos, con cron",
                 data
-            );
+            );*/
 
             _logger.LogInformation("Notificación enviada al topic 'events'.");
         }

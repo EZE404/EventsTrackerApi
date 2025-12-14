@@ -22,6 +22,8 @@ namespace EventsTrackerApi.Models
 
         public DateTime SentDate { get; set; }
         public DateTime? ResponseDate { get; set; }
+        
+        public DateTime? NotifiedAt { get; set; }
 
         // Las propiedades de navegación son inicializadas a null! para suprimir las advertencias del compilador.
         // Entity Framework Core se encarga de poblarlas durante las consultas.

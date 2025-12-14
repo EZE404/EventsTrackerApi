@@ -51,5 +51,31 @@ namespace EventsTrackerApi.Repositories
                 .OrderByDescending(e => e.SentDate)
                 .ToListAsync();
         }
+
+        public async Task<List<EventInvitation>> GetPendingUnnotifiedAsync(CancellationToken ct)
+        {
+            return await _context.EventInvitations
+                .Include(i => i.Event)
+                .Where(i =>
+                    i.ResponseStatus == InvitationStatus.SIN_RESPUESTA &&
+                    i.NotifiedAt == null
+                )
+                .OrderBy(i => i.SentDate)
+                .Take(500)
+                .ToListAsync(ct);
+        }
+
+        public async Task MarkAsNotifiedAsync(IEnumerable<int> ids, CancellationToken ct)
+        {
+            var now = DateTime.UtcNow;
+
+            await _context.EventInvitations
+                .Where(i => ids.Contains(i.Id))
+                .ExecuteUpdateAsync(s =>
+                    s.SetProperty(i => i.NotifiedAt, now),
+                    ct
+                );
+        }
+
     }
 }

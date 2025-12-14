@@ -24,8 +24,6 @@ public class AuthController(
     )
     : ControllerBase
 {
-    private readonly string projectId = "eventstracker-e0611";
-    private readonly string siteKey = "6Ldzi2srAAAAAEjfdihAQuIMcrude2r891D1idQE";
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto userLogin)

@@ -5,5 +5,6 @@ public record RegisterDeviceTokenDto(
     string Platform,
     string? DeviceId,
     string? AppVersion,
-    int UserId
+    int UserId,
+    int IsActive = 1
 );

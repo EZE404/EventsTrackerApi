@@ -38,6 +38,7 @@ public class DevicesController(
                     Token = req.Token,
                     Platform = req.Platform,
                     CreatedAtUtc = now,
+                    IsActive = req.IsActive == 1
                 };
 
         // Si vino por token y pertenecía a otro usuario, reasignar
@@ -68,7 +69,7 @@ public class DevicesController(
 
             toDeactivate.ForEach(o =>
             {
-                o.IsActive = false;
+               // o.IsActive = false;
                 o.UpdatedAtUtc = now;
             });
         }

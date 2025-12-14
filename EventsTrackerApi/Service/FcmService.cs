@@ -77,12 +77,23 @@ public class FcmService
 
         var url = $"https://fcm.googleapis.com/v1/projects/{_opts.ProjectId}/messages:send";
 
+        var safeData = (data ?? new Dictionary<string, string>())
+        .ToDictionary(k => k.Key, v => v.Value ?? "");
+
+        safeData["title"] = title ?? "";
+        safeData["body"]  = body  ?? "";
+
         // Construimos el mensaje
         var message = new
         {
             token = deviceToken,
             //    notification = new { title, body }, SACARLO PARA Q FUNCIONE EL onMessageReceived DE FCM
-            data 
+            android = new
+            {
+                priority = "HIGH",
+                ttl = "3600s" // opcional: 1 hora
+            },
+            data = safeData
         };
 
         var payload = new { message };

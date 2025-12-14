@@ -30,9 +30,9 @@ namespace EventsTrackerApi.Controllers
             }
 
             var invitations = await invitationRepo.GetByReceiverIdWithIncludesAsync(currentUserId);
-            
+
             var dtos = invitations.Select(i => InvitationMapper.ToEventInvitationDto(i));
-            
+
             return Ok(dtos);
         }
 
@@ -44,7 +44,9 @@ namespace EventsTrackerApi.Controllers
         {
             var invitations = await invitationRepo.GetByEventIdWithIncludesAsync(eventId);
 
-            var dtos = invitations.Select(i => InvitationMapper.ToEventInvitationDto(i, includeEvent: true, includeSender: true));
+            var dtos = invitations.Select(i =>
+                InvitationMapper.ToEventInvitationDto(i, includeEvent: true, includeSender: true, includeReceiver: true)
+            );
 
             return Ok(dtos);
         }
@@ -79,11 +81,11 @@ namespace EventsTrackerApi.Controllers
 
             invitation.ResponseStatus = statusEnum;
             invitation.ResponseDate = DateUtils.NowInArgentina();
-            
+
             await invitationRepo.UpdateAsync(invitation);
 
             var updatedInvitation = await invitationRepo.GetByIdWithIncludesAsync(invitationId);
-            return Ok(InvitationMapper.ToEventInvitationDto(updatedInvitation!));
+            return Ok(InvitationMapper.ToEventInvitationDto(updatedInvitation!, includeReceiver: true));
         }
 
         /// <summary>
@@ -195,5 +197,34 @@ namespace EventsTrackerApi.Controllers
             response.CreatedCount = toCreate.Count;
             return Ok(response);
         }
+
+        /// <summary>
+        /// Endpoint 6: Devuelve el detalle de UNA invitación por ID (solo el receptor).
+        /// </summary>
+        [HttpGet("{invitationId:int}")]
+        public async Task<ActionResult<EventInvitationDto>> GetInvitationById(int invitationId)
+        {
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var currentUserId))
+                return Unauthorized("Usuario no autenticado.");
+
+            var invitation = await invitationRepo.GetByIdWithIncludesAsync(invitationId);
+            if (invitation == null)
+                return NotFound("Invitación no encontrada.");
+
+            // Solo el receptor puede ver el detalle (si querés que el creador también pueda, lo ajustamos)
+            if (invitation.UserId != currentUserId)
+                return Forbid();
+
+            // incluí lo que necesites (evento, sender, receiver)
+            var dto = InvitationMapper.ToEventInvitationDto(
+                invitation,
+                includeEvent: true,
+                includeSender: true,
+                includeReceiver: true
+            );
+
+            return Ok(dto);
+        }
+
     }
 }
