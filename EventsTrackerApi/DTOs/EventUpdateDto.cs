@@ -5,6 +5,7 @@ using EventsTrackerApi.Utils;
 
 namespace EventsTrackerApi.DTOs
 {
+    [DateValidation]
     public class EventUpdateDto
     {
         [Required]
