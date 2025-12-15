@@ -127,6 +127,10 @@ builder.Services.AddScoped<IEventPostRepository, EventPostRepository>();
 builder.Services.AddScoped<IRepository<EventInvitation>, EventInvitationRepository>();
 builder.Services.AddScoped<IEventInvitationRepository, EventInvitationRepository>();
 
+// Favorites module repositories
+builder.Services.AddScoped<IRepository<Favorite>, FavoriteRepository>();
+builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
+
 // Opciones de Firebase (ProjectId y CredentialsPath)
 builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));
 builder.Services.Configure<NotificationsOptions>(builder.Configuration.GetSection("Notifications"));
