@@ -3,13 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Models;
 using Microsoft.OpenApi.Models;
 using EventsTrackerApi.Service;
 using EventsTrackerApi.Job;
-
+using Microsoft.AspNetCore.Diagnostics;
 var builder = WebApplication.CreateBuilder(args);
 // Cargar User Secrets en modo Desarrollo
 if (builder.Environment.IsDevelopment())
@@ -43,7 +44,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // Configuración de controllers y validación
 builder.Services.AddControllers()
     .AddNewtonsoftJson(options =>
-        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore);
+    {
+        options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+        // Forzar uso de PascalCase en JSON (creo que es el default y no es necesario). Tampoco es que fuerza el uso de PascalCase, sino que no modifica los nombres
+        // y deja los nombres de las propiedades tal cual están en las clases C#, que por defecto usan PascalCase.
+        // options.SerializerSettings.ContractResolver = new DefaultContractResolver();
+    });
     /*.AddJsonOptions(options =>
      {
          options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -108,6 +114,22 @@ builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IRepository<Location>, LocationRepository>();
 builder.Services.AddScoped<ILocationRepository, LocationRepository>();
 builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddScoped<IRepository<UserDeviceToken>, DevicesRepository>();
+builder.Services.AddScoped<IDevicesRepository, DevicesRepository>();
+builder.Services.AddScoped<IRepository<UserImage>, UserImageRepository>();
+builder.Services.AddScoped<IUserImageRepository, UserImageRepository>();
+
+// Posts module repositories
+builder.Services.AddScoped<IRepository<EventPost>, EventPostRepository>();
+builder.Services.AddScoped<IEventPostRepository, EventPostRepository>();
+
+// Invitations module repositories
+builder.Services.AddScoped<IRepository<EventInvitation>, EventInvitationRepository>();
+builder.Services.AddScoped<IEventInvitationRepository, EventInvitationRepository>();
+
+// Favorites module repositories
+builder.Services.AddScoped<IRepository<Favorite>, FavoriteRepository>();
+builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
 
 // Opciones de Firebase (ProjectId y CredentialsPath)
 builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));
@@ -118,6 +140,7 @@ builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Emai
 builder.Services.AddSingleton<FcmService>();
 builder.Services.AddHostedService<EventsSyncJob>();
 builder.Services.AddHostedService<EventsForDefeatJob>();
+builder.Services.AddHostedService<InvitationNotificationJob>();
 
 var app = builder.Build();
 
@@ -140,6 +163,26 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.UseHttpsRedirection();
+// Middleware de manejo de excepciones global
+app.UseExceptionHandler(appError =>
+{
+    appError.Run(async context =>
+    {
+        context.Response.StatusCode = (int)System.Net.HttpStatusCode.InternalServerError;
+        context.Response.ContentType = "application/json";
+ 
+        var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
+        if (contextFeature != null)
+        {
+            // En desarrollo, muestra el error completo. En producción, un mensaje genérico.
+            var errorMessage = app.Environment.IsDevelopment()
+                ? $"Error: {contextFeature.Error.Message}\nStack Trace: {contextFeature.Error.StackTrace}"
+                : "Ha ocurrido un error. Por favor, intente más tarde.";
+ 
+            await context.Response.WriteAsJsonAsync(new { message = errorMessage });
+        }
+    });
+});
 app.UseAuthentication();
 app.UseAuthorization();
 

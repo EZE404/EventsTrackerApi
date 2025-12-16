@@ -6,27 +6,34 @@ namespace EventsTrackerApi.Models
     public class EventInvitation
     {
         [Key]
-        public int ID { get; set; }
+        public int Id { get; set; }
 
-        public int EventID { get; set; }
+        public int EventId { get; set; }
 
-        public int UserID { get; set; }
+        public int UserId { get; set; }
 
-        public int CreatorID { get; set; }
+        public int CreatorId { get; set; }
 
-        [Required, MaxLength(20)]
-        public string ResponseStatus { get; set; }
+        /// <summary>
+        /// Estado de la respuesta a la invitación, manejado a través de un enum para mayor seguridad de tipos.
+        /// Se almacena como un string en la base de datos (configurado en AppDbContext).
+        /// </summary>
+        public InvitationStatus ResponseStatus { get; set; }
 
         public DateTime SentDate { get; set; }
         public DateTime? ResponseDate { get; set; }
+        
+        public DateTime? NotifiedAt { get; set; }
 
-        [ForeignKey("EventID")]
-        public Event Event { get; set; }
+        // Las propiedades de navegación son inicializadas a null! para suprimir las advertencias del compilador.
+        // Entity Framework Core se encarga de poblarlas durante las consultas.
+        [ForeignKey("EventId")]
+        public Event Event { get; set; } = null!;
 
-        [ForeignKey("UserID")]
-        public User User { get; set; }
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
 
-        [ForeignKey("CreatorID")]
-        public User Creator { get; set; }
+        [ForeignKey("CreatorId")]
+        public User Creator { get; set; } = null!;
     }
 }

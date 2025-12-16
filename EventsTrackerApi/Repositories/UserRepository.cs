@@ -51,6 +51,10 @@ namespace EventsTrackerApi.Repositories
                     prop.SetValue(existingUser, newValue);
                 }
             }
+            if (existingUser.FlagUpdateData == 1 && IsProfileComplete(existingUser))
+            {
+                existingUser.FlagUpdateData = 0;
+            }
 
             existingUser.FechaActualizacion = DateTime.UtcNow;
 
@@ -114,10 +118,24 @@ namespace EventsTrackerApi.Repositories
             if (!string.IsNullOrEmpty(userDto.TelefonoNumero))
                 existingUser.TelefonoNumero = userDto.TelefonoNumero;
 
+            if (!string.IsNullOrEmpty(userDto.Bio))
+                existingUser.Bio = userDto.Bio;
+
             // Actualizar la fecha de modificación
             existingUser.FechaActualizacion = DateTime.Now;
 
             return existingUser;
         }
+
+       private static bool IsProfileComplete(User u)
+{
+    bool dniOk = !string.IsNullOrWhiteSpace(u.Dni);
+    bool dirOk = !string.IsNullOrWhiteSpace(u.Direccion);
+    bool telOk = !string.IsNullOrWhiteSpace(u.TelefonoArea) &&
+                 !string.IsNullOrWhiteSpace(u.TelefonoNumero);
+
+    return dniOk && dirOk && telOk;
+}
+
     }
 }

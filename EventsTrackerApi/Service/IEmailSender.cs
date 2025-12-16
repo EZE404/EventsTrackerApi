@@ -1,4 +1,5 @@
 namespace EventsTrackerApi.Service;
+using EventsTrackerApi.DTOs.Invitations;  
 
 public interface IEmailSender
 {
@@ -6,4 +7,5 @@ public interface IEmailSender
    
     Task SendPasswordRecoveryAsync(string to, string resetToken);
     Task SendUserDataChangeAsync(string to, string firstName, string dni, string plainPassword);
+    Task SendEventInvitationAsync(InvitationEmailModelDto model);
 }

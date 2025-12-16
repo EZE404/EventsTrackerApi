@@ -14,7 +14,6 @@ namespace EventsTrackerApi.Models
         [Required(ErrorMessage = "El Nombre es obligatorio.")]
         [StringLength(50)]
         public string FirstName { get; set; } = string.Empty;
-
         
         [Required(ErrorMessage = "El Apellido es obligatorio.")]
         [StringLength(50)]
@@ -23,7 +22,7 @@ namespace EventsTrackerApi.Models
         [StringLength(128)]
         public string? PasswordHash { get; set; }
 
-        [StringLength(200)]
+        public UserImage? Avatar { get; set; }
         public string? AvatarUrl { get; set; }
 
         [StringLength(500)]
@@ -46,7 +45,8 @@ namespace EventsTrackerApi.Models
         [StringLength(200)]
         public string? Direccion { get; set; }
 
-        [StringLength(5)]
+        [MaxLength(10, ErrorMessage = "El código de área no puede superar 5 caracteres.")]
+
         public string? TelefonoArea { get; set; }
 
         [StringLength(15)]

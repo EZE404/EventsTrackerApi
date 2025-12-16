@@ -24,8 +24,6 @@ public class AuthController(
     )
     : ControllerBase
 {
-    private readonly string projectId = "eventstracker-c25d6";
-    private readonly string siteKey = "6Ldzi2srAAAAAEjfdihAQuIMcrude2r891D1idQE";
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto userLogin)
@@ -37,13 +35,15 @@ public class AuthController(
         }
 
         var token = GenerateJwtToken(user);
-        return Ok(new
+        var userDto = UserMapper.ToMapper(user);
+        var response = new LoginResponseDto
         {
             Token = token,
-            Data = UserMapper.ToMapper(user)
-        });
-    }
+            Data = userDto
+        };
 
+        return Ok(response);
+    }
 
     private string GenerateJwtToken(User user)
     {
@@ -190,8 +190,23 @@ public class AuthController(
             return Unauthorized("Token de Google inválido: " + ex.Message);
         }
 
+        // 1️⃣ Buscar usuario por email
+        var existingUser = await userRepository.FindAsync(u => u.Email == payload.Email)
+                                               .FirstOrDefaultAsync();
 
-        string newToken = GenerateJwtTokenGoogle(payload.Email);
+        if (existingUser == null)
+        {
+            // Usuario no existe → tu app Android se encarga de crearlo después
+            // Generamos solo token con email, SIN ID
+            return Ok(new
+            {
+                token = GenerateJwtTokenGoogle(payload.Email),
+                exists = false
+            });
+        }
+
+        // 2️⃣ Usuario existe → generar el token COMPLETO con Id_user
+        string newToken = GenerateJwtToken(existingUser);
 
         return Ok(new { token = newToken });
 
@@ -219,7 +234,4 @@ public class AuthController(
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-
-   
 }
-

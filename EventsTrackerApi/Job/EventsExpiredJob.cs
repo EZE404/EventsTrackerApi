@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Service;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace EventsTrackerApi.Job;
@@ -17,7 +18,7 @@ public class EventsForDefeatJob(
     private readonly FcmService _fcm = fcm;
     private readonly IOptions<NotificationsOptions> _opts = opts;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
-    private readonly int MINUTES_TO_SYNC = 180;
+    private readonly int MINUTES_TO_SYNC = 60; // cada 60 minutos
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -26,49 +27,142 @@ public class EventsForDefeatJob(
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
+            _logger.LogInformation("RunJob tick: nowUtc={Now:u}, minutes={Min}", DateTime.UtcNow, MINUTES_TO_SYNC);
+
             await RunJob(stoppingToken);
         }
+    }
+
+    private const int MaxDegreeOfParallelism = 12;
+
+    private static (DateTime startUtc, DateTime endUtc) GetLocalDayUtcRange(TimeZoneInfo tz, DateTime utcNow, int daysOffset)
+    {
+        var localBase = TimeZoneInfo.ConvertTimeFromUtc(utcNow, tz).Date.AddDays(daysOffset);
+        var startLocal = localBase;
+        var endLocal = localBase.AddDays(1);
+        var startUtc = TimeZoneInfo.ConvertTimeToUtc(startLocal, tz);
+        var endUtc = TimeZoneInfo.ConvertTimeToUtc(endLocal, tz);
+        return (startUtc, endUtc);
     }
 
     private async Task RunJob(CancellationToken ct)
     {
         try
         {
-            // calcular "mañana" en zona horaria local
             var tzId = _opts.Value.TimeZoneId ?? "America/Argentina/San_Luis";
             var tz = TimeZoneInfo.FindSystemTimeZoneById(tzId);
-            var (startUtc, endUtc) = GetLocalDayUtcRange(tz, DateTime.UtcNow);
+            var (startUtc, endUtc) = GetLocalDayUtcRange(tz, DateTime.UtcNow, daysOffset: 1);
 
-
-            _logger.LogInformation("Buscando eventos que finalizan el {FechaLocal} ({FechaUtc} UTC)...",
-                startUtc.ToShortDateString(), endUtc.ToString("u"));
+            _logger.LogInformation("Buscando eventos que finalizan entre {Start} y {End} (mañana local).",
+                startUtc.ToString("u"), endUtc.ToString("u"));
 
             using var scope = _scopeFactory.CreateScope();
+            var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+            var deviceRepo = scope.ServiceProvider.GetRequiredService<IDevicesRepository>();
             var eventRepo = scope.ServiceProvider.GetRequiredService<IEventRepository>();
 
-            //buscar eventos por vencer
             var events = await eventRepo.GetEventsEndingBetweenAsync(startUtc, endUtc, ct);
             if (!events.Any())
             {
                 _logger.LogInformation("No hay eventos por vencer mañana.");
                 return;
             }
+            _logger.LogInformation("Se encontraron {Count} eventos por vencer mañana.", events.Count());
+            var eventIds = events.Select(ev => ev.ID).ToArray();
+            var evById = events.ToDictionary(x => x.ID);
 
-            var sem = new SemaphoreSlim(10);
-            //var tasks = events.Select(e => NotificarUsuariosDeEvento(e, ct));
-            var tasks = events.Select(async ev =>
+            var tokens = await deviceRepo
+                .FindAsync(d => d.IsActive)
+                .Select(d => new { d.UserId, d.Token })
+                .Where(t => !string.IsNullOrWhiteSpace(t.Token))
+                .ToListAsync(ct);
+
+            if (tokens.Count == 0)
             {
-                await sem.WaitAsync(ct);
+                _logger.LogWarning("No hay dispositivos activos para notificar.");
+                return;
+            }
+            _logger.LogInformation("Se encontraron {Count} tokens de dispositivos activos.", tokens.Count);
+
+            var work = tokens
+                .GroupBy(t => t.UserId)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    Tokens = g.Select(x => x.Token)
+                            .Where(tk => !string.IsNullOrWhiteSpace(tk))
+                            .Distinct()
+                            .ToList(),
+                    Events = events
+                })
+                .Where(x => x.Tokens.Count > 0 && x.Events.Count() > 0)
+                .ToList();
+            
+            if (work.Count == 0)
+            {
+                _logger.LogWarning("No hay usuarios con tokens válidos para notificar.");
+                return;
+            }
+
+            var errors = new ConcurrentBag<(int UserId, string Token, Exception Ex)>();
+
+            await Parallel.ForEachAsync(work, new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaxDegreeOfParallelism,
+                CancellationToken = ct
+            },
+            async (item, tok) =>
+            {
                 try
                 {
-                    await NotificarUsuariosDeEvento(ev, ct);
+                    var count = item.Events.Count();
+                    var topTitles = item.Events.OrderBy(ev => ev.EndDateTime)
+                                               .Take(5)
+                                               .Select(ev => ev.Name)
+                                               .ToArray();
+                    var eventIdsCsv = string.Join(",", item.Events.Select(ev => ev.ID));
+
+                    var title = $"Tienes {count} evento{(count > 1 ? "s" : "")} que vencen mañana";
+                    var body = "Toca para ver la lista completa.";
+                    var extras = new Dictionary<string, string>
+                    {
+                        ["count"]    = count.ToString(),
+                        ["eventIds"] = eventIdsCsv,
+                        ["preview"]  = string.Join(" • ", topTitles),
+                        ["deeplinkList"] = "eventstracker-url://events/expiring-tomorrow"
+                    };
+
+                    var dataType = NotificationDataBuilder.Build(NotificationAction.EventsExpiringTomorrow, e: null, extras);
+                   /* var data = new Dictionary<string, string>
+                    {
+                        ["action"] = "EventsExpiringTomorrow",
+                        ["count"] = count.ToString(),
+                        ["eventIds"] = eventIdsCsv,
+                        ["preview"] = string.Join(" • ", topTitles)
+                    };*/
+
+                    foreach (var tk in item.Tokens)
+                    {
+                        try
+                        {
+                            await _fcm.SendToTokenAsync(tk, title, body, dataType, ct: tok);
+                              _logger.LogInformation("FCM OK user={UserId} token={TokenPrefix}", item.UserId, tk[..Math.Min(12, tk.Length)]);
+
+                        }
+                        catch (Exception sendEx)
+                        {
+                            errors.Add((item.UserId, tk, sendEx));
+                        }
+                    }
                 }
-                finally
+                catch (Exception ex)
                 {
-                    sem.Release();
+                    _logger.LogWarning(ex, "Fallo al preparar notificación para usuario {UserId}.", item.UserId);
                 }
             });
-            await Task.WhenAll(tasks);
+
+            foreach (var err in errors)
+                _logger.LogWarning(err.Ex, "Error enviando a user {UserId}, token {Token}", err.UserId, err.Token);
 
             _logger.LogInformation("Job 'EventosPorVencer' finalizado.");
         }
@@ -76,67 +170,6 @@ public class EventsForDefeatJob(
         {
             _logger.LogError(ex, "Error en job 'EventosPorVencer'.");
         }
-    }
-
-    private async Task NotificarUsuariosDeEvento(Event e, CancellationToken ct)
-    {
-        using var scope = _scopeFactory.CreateScope();
-        var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
-        // Usuarios relacionados a ese evento
-        // var users = await _userRepo.GetUsersByEventIdAsync(e.ID);
-        //  var users = await userRepo.GetUsersByEventIdAsync(e.ID, ct);
-        var users = await userRepo.GetAllAsync();
-        if (!users.Any())
-        {
-            _logger.LogInformation("Evento {Id} no tiene usuarios relacionados.", e.ID);
-            return;
-        }
-
-        var userIds = users.Select(u => u.ID).Distinct().ToArray();
-
-        //TODO: Buscar tokens de los usuarios
-        //var tokens = await _tokenRepo.GetActiveTokensByUserIdsAsync(userIds);
-        var tokens = new List<string>
-        {
-            "cfxtbBzfRZSaQohVaBehds:APA91bHq-taWjEnUsjVd10PkIELxJwhlsim3yOz3sGx5N5H987jBD5Omyqhd2XWcEs6WWmkLcTVCd-8oQpA95_qzYRTQ7Ik_QdfohKvu0PBTkPmC-_l3r54"
-        };
-
-        // Deduplicar tokens
-        var uniqueTokens = new HashSet<string>(tokens.Where(t => !string.IsNullOrWhiteSpace(t)));
-
-        if (uniqueTokens.Count == 0)
-        {
-            _logger.LogInformation("No hay tokens para notificar en el evento {Id}.", e.ID);
-            return;
-        }
-
-        _logger.LogInformation("Enviando {Count} notificaciones para evento {Id} ({Name}) con fin {End}.",
-            uniqueTokens.Count, e.ID, e.Name, e.EndDateTime);
-
-        var title = $"El evento '{e.Name}' finaliza pronto";
-        var body = $"Finaliza el {e.EndDateTime:dd/MM/yyyy HH:mm}";
-
-        var data = NotificationDataBuilder.Build(NotificationAction.EventExpired, e);
-        // Envío en paralelo con límite (para no saturar)
-        var throttler = new SemaphoreSlim(10);
-        var tasks = uniqueTokens.Select(async token =>
-        {
-            await throttler.WaitAsync(ct);
-            try
-            {
-                await _fcm.SendToTokenAsync(token, title, body, data, ct: ct);
-            }
-            catch (Exception sendEx)
-            {
-                _logger.LogWarning(sendEx, "Error enviando a token (evento {EventId}).", e.ID);
-            }
-            finally
-            {
-                throttler.Release();
-            }
-        });
-
-        await Task.WhenAll(tasks);
     }
 
     private static (DateTime startUtc, DateTime endUtc) GetLocalDayUtcRange(TimeZoneInfo tz, DateTime utcNow)

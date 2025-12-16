@@ -30,12 +30,15 @@ namespace EventsTrackerApi.Models
 
         public int LocationId { get; set; }
 
-        public float Price { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        public decimal Price { get; set; }
         
         public int RatingsCount { get; set; } = 0;
         public double RatingsSum   { get; set; } = 0;
 
         [NotMapped]
+        // El promedio se calcula para una escala de 5 estrellas.
+        // Como los ratings se guardan de 1 a 10, el promedio (RatingsSum / RatingsCount) se divide por 2.
         public double RatingAverage => RatingsCount == 0 ? 0 : RatingsSum / (2 * RatingsCount);
     }
 }

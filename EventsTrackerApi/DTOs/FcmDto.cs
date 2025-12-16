@@ -1,6 +1,6 @@
 namespace EventsTrackerApi.Controllers.request;
 
-public class FcmRequest
+public class FcmDto
 {
     public string DeviceToken { get; set; } = "";
     public string Title { get; set; } = "";

@@ -20,7 +20,7 @@ public static class NotificationDataBuilder
             case NotificationAction.EventExpired:
                 RequireEvent(e, action);
                 AddEvent(data, e!);
-                data["accion"] = "event_expired";
+                data["action"] = "event_expired";
                 data["title"]  = $"El evento '{e!.Name}' finaliza pronto";
                 data["body"]   = $"Finaliza el {e!.EndDateTime:dd/MM/yyyy HH:mm}";
                 break;
@@ -28,7 +28,7 @@ public static class NotificationDataBuilder
             case NotificationAction.EventStartingSoon:
                 RequireEvent(e, action);
                 AddEvent(data, e!);
-                data["accion"]   = "event_starting_soon";
+                data["action"]   = "event_starting_soon";
                 data["title"]    = $"El evento '{e!.Name}' empieza pronto";
                 data["body"]     = $"Empieza el {e!.StartDateTime:dd/MM/yyyy HH:mm}";
                 data["startUtc"] = e!.StartDateTime.ToString("o", CultureInfo.InvariantCulture);
@@ -37,34 +37,36 @@ public static class NotificationDataBuilder
             case NotificationAction.EventUpdated:
                 RequireEvent(e, action);
                 AddEvent(data, e!);
-                data["accion"] = "event_updated";
+                data["action"] = "event_updated";
                 data["title"]  = $"Se actualizó '{e!.Name}'";
                 data["body"]   = "Revisá los cambios del evento";
                 break;
 
-            case NotificationAction.OpenUrl:
-                data["accion"] = "open_url";
-                data["entity"] = "link";
-                if (extra == null || !extra.TryGetValue("url", out var url) || string.IsNullOrWhiteSpace(url))
-                    throw new ArgumentException("OpenUrl requiere 'url' en extra.");
-                data["title"] = "Ver más";
-                data["body"]  = "Abrir enlace";
-                data["url"]   = url;
+            case NotificationAction.EventsExpiringTomorrow:
+                data["action"] = "events_expiring_tomorrow";
+                data["entity"] = "event_list";
+                    if (extra == null || !extra.TryGetValue("count", out var count) || string.IsNullOrWhiteSpace(count))
+                    throw new ArgumentException("EventsExpiringTomorrow requiere 'count' en extra.");
+                data["title"]   = $"Tienes {count} evento{(count == "1" ? "" : "s")} que vencen mañana";
+                data["body"]    = "Toca para ver la lista completa.";
+                if (extra.TryGetValue("eventIds", out var eventIds))   data["eventIds"]   = eventIds;
+                if (extra.TryGetValue("preview", out var preview))     data["preview"]    = preview;
+                if (extra.TryGetValue("deeplinkList", out var dl))     data["deeplink"]   = dl; // opcional
+                data["collapseId"] = "events_tomorrow_summary"; // colapsa múltiples envíos iguales
                 break;
-
             case NotificationAction.Profile:
-                data["accion"] = "profile";
+                data["action"] = "profile";
                 data["entity"] = "user";
                 if (extra != null && extra.TryGetValue("userId", out var uid)) data["userId"] = uid;
                 break;
 
             case NotificationAction.SyncMeetings:
-                data["accion"] = "sync_meetings";
+                data["action"] = "sync_meetings";
                 data["entity"] = "system";
                 break;
 
             default:
-                data["accion"] = "noop";
+                data["action"] = "noop";
                 data["entity"] = "system";
                 break;
         }

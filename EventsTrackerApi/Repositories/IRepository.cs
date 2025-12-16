@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using EventsTrackerApi.Models;
 
 namespace EventsTrackerApi.Repositories
 {
@@ -10,7 +9,10 @@ namespace EventsTrackerApi.Repositories
         Task AddAsync(T entity);
         Task<T?> UpdateAsync(T entity);
         Task<bool> DeleteAsync(int id);
-        
+        Task<T?> FirstOrDefaultAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        Task<bool> AnyAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        Task<List<T>> ToListAsync(Expression<Func<T, bool>> predicate, CancellationToken ct = default);
+        Task<int> SaveChangesAsync(CancellationToken ct = default);
         IQueryable<T> FindAsync(Expression<Func<T, bool>> predicate);
     }
 }

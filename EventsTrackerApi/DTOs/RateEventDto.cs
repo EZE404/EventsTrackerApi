@@ -1,6 +1,6 @@
 namespace EventsTrackerApi.Controllers.request;
 
-public record RateEventRequest
+public record RateEventDto
 {
     public byte Score { get; set; }
     
