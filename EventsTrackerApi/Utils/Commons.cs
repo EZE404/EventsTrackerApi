@@ -353,7 +353,7 @@ public class Commons
             </div>
 
             <div class='content'>
-            <p>{receiverName},</p>
+            <p>Hola, {receiverName}, como estás?</p>
 
             <p>
                 <b>{senderName}</b> te invitó al evento:

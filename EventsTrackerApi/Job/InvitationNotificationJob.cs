@@ -14,7 +14,7 @@ public class InvitationNotificationJob(
     ILogger<InvitationNotificationJob> logger
 ) : BackgroundService
 {
-    private const int MinutesToSync = 1;
+    private const int MinutesToSync =15;
     private const int MaxDegreeOfParallelism = 12;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
