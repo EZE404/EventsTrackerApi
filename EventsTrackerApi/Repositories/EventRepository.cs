@@ -1,7 +1,8 @@
 using EventsTrackerApi.Data;
 using EventsTrackerApi.DTOs;
+using EventsTrackerApi.DTOs.Event;
 using EventsTrackerApi.Models;
-using EventsTrackerApi.Models.mappers;
+using EventsTrackerApi.Repositories.mappers;
 using EventsTrackerApi.Utils;
 using Microsoft.EntityFrameworkCore;
 

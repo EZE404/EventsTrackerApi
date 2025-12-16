@@ -1,10 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using EventsTrackerApi.Controllers.response;
 using EventsTrackerApi.Data;
 using EventsTrackerApi.DTOs;
+using EventsTrackerApi.DTOs.User;
 using EventsTrackerApi.Models;
-using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Repositories.mappers;
 using EventsTrackerApi.Service;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

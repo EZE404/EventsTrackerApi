@@ -1,5 +1,6 @@
 using System.Security.Claims;
-using EventsTrackerApi.Controllers.request;
+using EventsTrackerApi.DTOs.NotificationPush;
+using EventsTrackerApi.DTOs.User;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

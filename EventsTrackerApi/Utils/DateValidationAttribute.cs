@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using EventsTrackerApi.DTOs;
+using EventsTrackerApi.DTOs.Event;
 
 namespace EventsTrackerApi.Utils
 {

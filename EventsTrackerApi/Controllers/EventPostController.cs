@@ -1,6 +1,6 @@
 using EventsTrackerApi.DTOs.Posts;
-using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
+using EventsTrackerApi.Repositories.mappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
