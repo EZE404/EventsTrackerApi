@@ -160,13 +160,18 @@ namespace EventsTrackerApi.Controllers
             _logger.LogInformation($"UserId: {userId}");
 
             var (avg, count) = await iEventRepository.UpsertRatingAsync(eventId, userId, req.Score, ct);
-            return Ok(new RatingSummaryDto(Math.Round(avg, 2), count));
+            var rating = new RatingSummaryDto(Math.Round(avg, 2), count);
+            _logger.LogInformation($"Rating actualizado: Average={rating.Average}, Count={rating.Count}");
+            
+            return Ok(rating);
         }
 
         // GET /api/events/{eventId}/ratings/summary
         [HttpGet("{eventId:int}/ratings/summary")]
         public async Task<ActionResult<RatingSummaryDto>> GetRatingSummary(int eventId, CancellationToken ct)
         {
+            
+            _logger.LogInformation($"Inicio de GetRatingSummary para eventId: {eventId}");
             var (avg, count) = await iEventRepository.GetRatingSummaryAsync(eventId, ct);
             return Ok(new RatingSummaryDto(Math.Round(avg, 2), count));
         }
