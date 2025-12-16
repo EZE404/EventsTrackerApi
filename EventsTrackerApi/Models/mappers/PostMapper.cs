@@ -32,7 +32,8 @@ namespace EventsTrackerApi.Models.mappers
                     Id = post.User.ID,
                     FirstName = post.User.FirstName,
                     LastName = post.User.LastName,
-                    Email = post.User.Email
+                    Email = post.User.Email,
+                    AvatarUrl = post.User.AvatarUrl
                 } : null,
                 Event = post.Event != null ? new EventSummaryDto
                 {
