@@ -82,5 +82,44 @@ namespace EventsTrackerApi.Controllers
             // y el cuerpo del post recién creado.
             return CreatedAtAction(nameof(GetPostsByEvent), new { eventId = postDto.Id }, postDto);
         }
+
+        /// <summary>
+        /// Elimina un post específico. Solo el propietario del post puede eliminarlo.
+        /// </summary>
+        /// <param name="postId">El ID del post a eliminar.</param>
+        /// <returns>204 No Content si se elimina exitosamente.</returns>
+        // DELETE posts/{postId}
+        [HttpDelete("{postId}")]
+        public async Task<IActionResult> DeletePost(int postId)
+        {
+            // Se obtiene el ID del usuario autenticado desde el token JWT.
+            if (!int.TryParse(User.FindFirst("Id_user")?.Value, out var userId))
+            {
+                return Unauthorized("Usuario no autenticado o inexistente.");
+            }
+
+            // Se obtiene el post a eliminar.
+            var post = await eventPostRepository.GetByIdAsync(postId);
+            if (post == null)
+            {
+                return NotFound($"No se encontró el post con ID {postId}.");
+            }
+
+            // Se valida que el post pertenezca al usuario autenticado.
+            if (post.UserID != userId)
+            {
+                return Forbid();
+            }
+
+            // Se elimina el post.
+            var deleted = await eventPostRepository.DeleteAsync(postId);
+            if (!deleted)
+            {
+                return StatusCode(500, "Ocurrió un error al eliminar el post.");
+            }
+
+            // Se retorna 204 No Content para indicar que la eliminación fue exitosa.
+            return NoContent();
+        }
     }
 }
