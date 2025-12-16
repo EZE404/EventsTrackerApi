@@ -214,7 +214,8 @@ namespace EventsTrackerApi.Repositories
             var borrador = (int)EventStatus.BORRADOR;
             var uid = request.UserId;
 
-            var query = _context.Set<Event>()
+            var query = _context.Set<Event>()                       
+                .AsNoTracking()
                 .Include(e => e.Creator)
                 .Include(e => e.Location)
                 .Include(e => e.Invitations)
@@ -253,6 +254,13 @@ namespace EventsTrackerApi.Repositories
                 query = query.Where(e =>
                     (!request.MyEventsFlag || e.CreatorID == id) &&
                     (!request.OnlyInvited || e.Invitations.Any(i => i.UserId == id)));
+            }
+
+            if (request.MyFavoriteFlag && uid.HasValue)
+            {
+                var id = uid.Value;
+                query = query.Where(e => _context.Favorites
+                    .Any(f => f.UserId == id && f.EventId == e.ID));
             }
 
             // 5) Orden

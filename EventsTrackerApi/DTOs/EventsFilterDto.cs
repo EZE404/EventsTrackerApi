@@ -10,5 +10,6 @@ public class EventsFilterDto
     public int? PageSize { get; set; }    
     public bool OnlyInvited { get; set; } = false;    
     public bool MyEventsFlag { get; set; } = false;
+    public bool MyFavoriteFlag { get; set; } = false;
     public int? UserId { get; set; }
 }
