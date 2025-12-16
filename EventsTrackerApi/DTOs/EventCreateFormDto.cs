@@ -7,6 +7,7 @@ namespace EventsTrackerApi.DTOs
 {
     // DTO diseñado para binding desde multipart/form-data
     // Incluye el archivo de imagen (Flyer) y los campos planos requeridos por Retrofit
+    [DateValidation]
     public class EventCreateFormDto
     {
         [Required, MaxLength(70)]

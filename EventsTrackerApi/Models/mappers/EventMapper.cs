@@ -102,5 +102,40 @@ namespace EventsTrackerApi.Models.mappers
                 Name = ev.Name
             };
         }
+
+        /// <summary>
+        /// Convierte una entidad Event a un DTO ligero (EventLiteDto).
+        /// Útil para contextos donde no se necesita toda la información detallada del evento
+        /// (ej: listado de favoritos, búsquedas, timelines).
+        /// Excluye intencionalmente Creator, Tags, Posts, Invitations para mantener la respuesta ligera.
+        /// </summary>
+        /// <param name="e">La entidad Event a convertir.</param>
+        /// <returns>Un EventLiteDto o null si la entrada es null.</returns>
+        public static EventLiteDto? ToEventLiteDto(Event e)
+        {
+            if (e == null) return null;
+
+            // Normalizado a 0-5 (partiendo de scores 1-10)
+            var avg5 = e.RatingsCount == 0
+                ? 0d
+                : (double)e.RatingsSum / (2.0 * e.RatingsCount);
+
+            return new EventLiteDto
+            {
+                Id = e.ID,
+                Name = e.Name,
+                Description = e.Description,
+                FlyerUrl = e.FlyerUrl,
+                StartDateTime = DateUtils.ToUtcString(e.StartDateTime),
+                EndDateTime = DateUtils.ToUtcString(e.EndDateTime),
+                Capacity = e.Capacity,
+                CreatorID = e.CreatorID,
+                Status = e.Status,
+                Location = e.Location,
+                Price = e.Price,
+                RatingAverage = Math.Round(avg5, 2)
+            };
+        }
     }
 }
+

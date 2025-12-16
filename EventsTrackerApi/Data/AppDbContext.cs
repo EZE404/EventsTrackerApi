@@ -14,7 +14,8 @@ namespace EventsTrackerApi.Data
         public DbSet<Tag> Tags { get; set; }
         public DbSet<EventTag> EventTags { get; set; }
         public DbSet<EventRating> EventRatings { get; set; }
-        public DbSet<UserDeviceToken> UserDeviceTokens { get; set; }        
+        public DbSet<UserDeviceToken> UserDeviceTokens { get; set; }
+        public DbSet<Favorite> Favorites { get; set; }
         public DbSet<UserImage> UserImages => Set<UserImage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -154,6 +155,28 @@ namespace EventsTrackerApi.Data
                 e.Property(p => p.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP(6)");
                 e.HasIndex(p => p.UpdatedAt);
             });
+
+            // --- INICIO: Configuración para Favorite ---
+            modelBuilder.Entity<Favorite>(e =>
+            {
+                e.ToTable("Favorites");
+                e.HasKey(x => new { x.EventId, x.UserId });
+
+                e.HasOne(x => x.Event)
+                    .WithMany()
+                    .HasForeignKey(x => x.EventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.HasOne(x => x.User)
+                    .WithMany()
+                    .HasForeignKey(x => x.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                e.Property(x => x.CreatedAtUtc).IsRequired();
+                e.HasIndex(x => x.UserId);
+                e.HasIndex(x => x.EventId);
+            });
+            // --- FIN: Configuración para Favorite ---
         }
     }
 }
