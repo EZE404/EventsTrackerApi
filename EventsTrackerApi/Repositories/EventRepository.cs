@@ -322,6 +322,7 @@ namespace EventsTrackerApi.Repositories
 
             if (evt is null) throw new KeyNotFoundException("Evento no encontrado.");
             var avg = evt.RatingsCount == 0 ? 0 : (double)evt.RatingsSum / evt.RatingsCount;
+            
             return (avg, evt.RatingsCount);
         }
     }
