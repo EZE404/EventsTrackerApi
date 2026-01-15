@@ -1,6 +1,5 @@
 using EventsTrackerApi.DTOs.Invitations;
 using EventsTrackerApi.Models;
-using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Service;
 using EventsTrackerApi.Utils;
@@ -8,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using EventsTrackerApi.Repositories.mappers;
 
 namespace EventsTrackerApi.Controllers
 {

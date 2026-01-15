@@ -1,5 +1,6 @@
 
 using EventsTrackerApi.DTOs;
+using EventsTrackerApi.DTOs.Event;
 using EventsTrackerApi.Models;
 
 namespace EventsTrackerApi.Repositories;

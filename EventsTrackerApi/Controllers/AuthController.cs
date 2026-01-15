@@ -1,6 +1,5 @@
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.Models;
-using EventsTrackerApi.Models.mappers;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using EventsTrackerApi.DTOs.Login;
+using EventsTrackerApi.DTOs.User;
+using EventsTrackerApi.Repositories.mappers;
 using Google.Apis.Auth;
 using Microsoft.EntityFrameworkCore;
 using EventsTrackerApi.Service;
