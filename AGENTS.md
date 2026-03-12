@@ -51,7 +51,7 @@ dotnet test --filter "FullyQualifiedName~TestMethodName"
 
 ---
 
-## Architecture (Phases 1-3 Complete)
+## Architecture (Phases 1-4 Complete)
 
 ```
 HTTP Request → Controller → Service → Repository → Database
@@ -118,6 +118,21 @@ Task<User?> GetByEmailAsync(string email);
 - Use `ILocalizationService` to get localized strings
 - Use `IEmailTemplateService` for email templates
 
+### Strongly-Typed Configuration (Phase 4)
+- Use `IOptions<T>` for configuration classes (e.g., `IOptions<JwtOptions>`)
+- Avoid magic strings like `configuration["Jwt:Key"]`
+- Create Options classes in `Models/` folder:
+```csharp
+public class JwtOptions
+{
+    public string Key { get; set; }
+    public string Issuer { get; set; }
+    public string Audience { get; set; }
+    public int ExpirationMinutes { get; set; } = 60;
+}
+```
+- Register: `builder.Services.Configure<JwtOptions>(configuration.GetSection("Jwt"));`
+
 ### Imports
 - File-scoped namespaces: `namespace EventsTrackerApi.Controllers;`
 - Group: System → Microsoft → Third-party → Project
@@ -160,10 +175,19 @@ public class EventsController : ControllerBase
 - Use `IRepository<T>` base generic for CRUD
 - Mappers in `Repositories/mappers/`
 
-### Error Handling
+### Error Handling (Phase 4)
 - `ModelState.IsValid` for request validation
 - HTTP status codes: `Ok()` (200), `CreatedAtAction()` (201), `BadRequest()` (400), `Unauthorized()` (401), `Forbid()` (403), `NotFound()` (404), `NoContent()` (204)
+- **Security**: Never expose internal exception details to clients - return generic messages
 - Use `_logger.LogInformation` / `_logger.LogError`, NOT `Console.WriteLine`
+- Always log errors with context before returning 500:
+```csharp
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Error validating verification code");
+    return StatusCode(500, new { message = "An error occurred. Please try again." });
+}
+```
 
 ### Background Jobs
 - `BackgroundService` or `IHostedService`
@@ -181,6 +205,7 @@ public class EventsController : ControllerBase
 - **Phase 1**: Service Layer complete - business logic centralized in Service layer
 - **Phase 2**: XML Documentation complete - all public APIs documented
 - **Phase 3**: Localization complete - ResourceManager-based i18n support
+- **Phase 4**: Code quality improvements - strongly-typed config, error handling
 - **No tests exist** - Phase 5 in refactor plan
 - **No linting** - no StyleCop configured
 - **User Secrets**: `dotnet user-secrets init` in development
