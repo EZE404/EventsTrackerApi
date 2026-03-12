@@ -1,16 +1,14 @@
-using System.ComponentModel.DataAnnotations;
-using EventsTrackerApi.Data;
 using EventsTrackerApi.DTOs;
 using EventsTrackerApi.DTOs.User;
 using EventsTrackerApi.Models;
 using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Repositories.mappers;
 using EventsTrackerApi.Service;
+using EventsTrackerApi.Service.Interfaces;
 using EventsTrackerApi.Utils;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 
 namespace EventsTrackerApi.Controllers;
 
@@ -18,91 +16,89 @@ namespace EventsTrackerApi.Controllers;
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 public class UsersController(
-                IUserRepository userRepository,
-                IUserImageRepository userImageRepository,
-                IRepository<Event> eventRepository,
-                AppDbContext dbContext,
-                IConfiguration configuration,
-                ILogger<UsersController> _logger,
-                IEmailSender SenderEmail
+    IUserService userService,
+    IRepository<Event> eventRepository,
+    IRepository<User> userRepository,
+    IUserImageRepository userImageRepository,
+    ILogger<UsersController> logger
     )
     : ControllerBase
 {
-    private readonly int IS_HOST = 1;
+    private readonly IUserService _userService = userService 
+        ?? throw new ArgumentNullException(nameof(userService));
+    private readonly IRepository<Event> _eventRepository = eventRepository 
+        ?? throw new ArgumentNullException(nameof(eventRepository));
+    private readonly IRepository<User> _userRepository = userRepository 
+        ?? throw new ArgumentNullException(nameof(userRepository));
+    private readonly IUserImageRepository _userImageRepository = userImageRepository 
+        ?? throw new ArgumentNullException(nameof(userImageRepository));
+    private readonly ILogger<UsersController> _logger = logger 
+        ?? throw new ArgumentNullException(nameof(logger));
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
     {
-        var users = await userRepository.GetAllAsync();
+        var users = await _userService.GetAllAsync();
         return Ok(users.Select(UserMapper.ToMapper));
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<UserDto>> GetUser(int id)
     {
-        var user = await userRepository.GetByIdAsync(id);
+        var user = await _userService.GetByIdAsync(id);
         if (user == null) return NotFound();
         return Ok(UserMapper.ToMapper(user));
     }
-
 
     [HttpPost]
     [AllowAnonymous]
     public async Task<ActionResult<UserDto>> CreateUser(User user)
     {
-        var password = user.PasswordHash.IsNullOrEmpty() ? Commons.GeneratePassword(12) : user.PasswordHash;
-        user.PasswordHash = Commons.CreatePasswordHash(password);
-        user.Dni ??= (await Commons.GetNextDniAsync(dbContext)).ToString();
-        user.IsHost = IS_HOST;
-        user.FechaActualizacion = DateTime.UtcNow;
-
-        if (user.FlagUpdateData != 0)
-        {
-            await SenderEmail.SendUserDataChangeAsync(user.Email, user.FirstName, user.Dni, password);
-        }
-
-        await userRepository.AddAsync(user);
-        return CreatedAtAction(nameof(GetUser), new { id = user.ID }, UserMapper.ToMapper(user));
+        var createdUser = await _userService.CreateAsync(user);
+        return CreatedAtAction(nameof(GetUser), new { id = createdUser.ID }, UserMapper.ToMapper(createdUser));
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto userUpdate)
     {
         int authenticatedUserId = Convert.ToInt32(User.FindFirst("Id_user")?.Value);
-        Console.WriteLine($"Authenticated User ID: {authenticatedUserId}, Target User ID: {id}, DTO User ID: {userUpdate.Id}");
+        _logger.LogInformation("Authenticated User ID: {AuthUserId}, Target User ID: {TargetId}", authenticatedUserId, id);
 
         if (authenticatedUserId != id || id != userUpdate.Id)
+        {
             return BadRequest(new { status = "error", message = "No posee permisos." });
-
-        var userExists = await userRepository.GetByIdAsync(id);
-        if (userExists == null)
-            return NotFound(new { status = "error", message = "Usuario no encontrado" });
+        }
 
         if (!ModelState.IsValid)
+        {
             return BadRequest(ModelState);
+        }
 
         try
         {
-            User updatedUser = UserMapper.MapUpdateDtoToUser(userUpdate, userExists);
-            await userRepository.ApplyChanges(userExists, updatedUser);
-            await userRepository.UpdateUserAsync(userExists);
-
-            return Ok(UserMapper.ToMapper(userExists));
+            var updatedUser = await _userService.UpdateAsync(id, userUpdate);
+            return Ok(UserMapper.ToMapper(updatedUser));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { status = "error", message = ex.Message });
         }
         catch (Exception ex)
         {
-            return BadRequest(new { status = "error", message = ex.Message });
+            _logger.LogError(ex, "Error updating user {UserId}", id);
+            return BadRequest(new { status = "error", message = "An error occurred while updating the user." });
         }
     }
-
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
-        var deleted = await userRepository.DeleteAsync(id);
+        var deleted = await _userService.DeleteAsync(id);
 
         if (!deleted)
+        {
             return NotFound(new { message = $"User with ID {id} not found." });
+        }
 
         return Ok(new
         {
@@ -116,7 +112,7 @@ public class UsersController(
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-        var user = await userRepository.GetByIdAsync(id);
+        var user = await _userService.GetByIdAsync(id);
         if (user == null) return NotFound("User not found.");
 
         var filePath = Path.Combine("wwwroot/images/profiles", $"{Guid.NewGuid()}_{file.FileName}");
@@ -125,8 +121,8 @@ public class UsersController(
             await file.CopyToAsync(stream);
         }
 
-        user.AvatarUrl = filePath;  // Guarda la ruta en la base de datos
-        await userRepository.UpdateAsync(user);
+        user.AvatarUrl = filePath;
+        await _userRepository.UpdateAsync(user);
 
         return Ok("Profile photo uploaded successfully.");
     }
@@ -136,7 +132,7 @@ public class UsersController(
     {
         if (file == null || file.Length == 0) return BadRequest("No file uploaded.");
 
-        var evt = await eventRepository.GetByIdAsync(id);
+        var evt = await _eventRepository.GetByIdAsync(id);
         if (evt == null) return NotFound("Event not found.");
 
         var filePath = Path.Combine("wwwroot/images/covers", $"{Guid.NewGuid()}_{file.FileName}");
@@ -146,56 +142,50 @@ public class UsersController(
         }
 
         evt.FlyerUrl = filePath;
-        await eventRepository.UpdateAsync(evt);
+        await _eventRepository.UpdateAsync(evt);
 
         return Ok("Cover photo uploaded successfully.");
     }
 
     [HttpGet("find-by-email")]
     [Authorize]
-    public async Task<ActionResult<UserDto>> GetUserByEmail([FromQuery][EmailAddress] string email)
+    public async Task<ActionResult<UserDto>> GetUserByEmail([FromQuery] string email)
     {
         try
         {
-            var user = await userRepository.GetByEmailAsync(email);
+            var user = await _userService.GetByEmailAsync(email);
 
-            if (user == null) return NotFound("User no encontrado.");
+            if (user == null) return NotFound("User not found.");
 
             return Ok(UserMapper.ToMapper(user));
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, new
-            {
-                status = "error",
-                message = "Error access database"
-            });
+            _logger.LogError(ex, "Error finding user by email {Email}", email);
+            return StatusCode(500, new { status = "error", message = "Error accessing database" });
         }
     }
 
     [HttpGet("exist-email")]
     [AllowAnonymous]
-    public async Task<ActionResult<ExistEmailDto>> GetExistEmail([FromQuery][EmailAddress] string email)
+    public async Task<ActionResult<ExistEmailDto>> GetExistEmail([FromQuery] string email)
     {
         try
         {
-            var user = await userRepository.GetByEmailAsync(email);
+            var exists = await _userService.ExistsByEmailAsync(email);
 
             var existEmailDto = new ExistEmailDto
             {
                 Status = "success",
-                Exist = user != null
+                Exist = exists
             };
 
             return Ok(existEmailDto);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            return StatusCode(500, new
-            {
-                status = "error",
-                message = "Error access database"
-            });
+            _logger.LogError(ex, "Error checking email existence {Email}", email);
+            return StatusCode(500, new { status = "error", message = "Error accessing database" });
         }
     }
 
@@ -205,15 +195,14 @@ public class UsersController(
     {
         try
         {
-            var lastId = await userRepository.GetLastUserIdAsync();
+            var lastId = await _userService.GetLastUserIdAsync();
             return Ok(lastId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al obtener el próximo ID de usuario.");
-            return StatusCode(500, "Error interno al obtener el próximo ID.");
+            _logger.LogError(ex, "Error getting last user ID");
+            return StatusCode(500, "Error internal");
         }
-
     }
 
     [Authorize]
@@ -221,9 +210,9 @@ public class UsersController(
     [RequestSizeLimit(8_000_000)]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> UploadAvatar(
-       int userId,
-       [FromForm] UploadAvatarRequest request,
-       CancellationToken ct)
+        int userId,
+        [FromForm] UploadAvatarRequest request,
+        CancellationToken ct)
     {
         if (request?.File == null || request.File.Length == 0)
             return BadRequest("Archivo requerido.");
@@ -234,38 +223,29 @@ public class UsersController(
         if (request.File.Length > 8_000_000)
             return BadRequest("Máximo 8MB.");
 
-        var user = await userRepository.FirstOrDefaultAsync(u => u.ID == userId, ct);
-        if (user == null) return NotFound("Usuario no encontrado.");
-
         try
         {
-            string newUrl = await ImageFilesUtils.SaveUserAvatarAsync(request.File);
-            if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
-            {
-                ImageFilesUtils.DeleteImageInBackground(user.AvatarUrl);
-            }
-
-            user.AvatarUrl = newUrl;
-            //user.UpdatedAt = DateTime.UtcNow;
-            await userRepository.SaveChangesAsync(ct);
-
+            var newUrl = await _userService.UploadAvatarAsync(userId, request.File, ct);
             return Ok(new { userId, url = newUrl });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al subir avatar.");
-            return StatusCode(500, "Error interno al subir avatar.");
+            _logger.LogError(ex, "Error uploading avatar for user {UserId}", userId);
+            return StatusCode(500, "Error internal");
         }
     }
 
-    // GET: /api/users/{userId}/avatar
     [Authorize]
     [HttpGet("{userId:int}/avatar")]
     public async Task<IActionResult> GetAvatar(int userId, CancellationToken ct)
     {
-        var img = await userImageRepository.FirstOrDefaultAsync(x => x.UserId == userId, ct);
+        var img = await _userImageRepository.FirstOrDefaultAsync(x => x.UserId == userId, ct);
         if (img == null) return NotFound();
-        Response.Headers.CacheControl = "public,max-age=3600"; // opcional
+        Response.Headers.CacheControl = "public,max-age=3600";
         return File(img.Data, img.ContentType);
     }
 }

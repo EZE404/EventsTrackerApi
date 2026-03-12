@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Password Recovery Email -->
+  <data name="PasswordRecoverySubject" xml:space="preserve">
+    <value>Recuperación de Contraseña - Events Tracker</value>
+  </data>
+  <data name="PasswordRecoveryHeader" xml:space="preserve">
+    <value>Recuperación de Contraseña</value>
+  </data>
+  <data name="PasswordRecoveryGreeting" xml:space="preserve">
+    <value>Hola,</value>
+  </data>
+  <data name="PasswordRecoveryBody" xml:space="preserve">
+    <value>Recibimos una solicitud para restablecer tu contraseña. Usá este código de verificación:</value>
+  </data>
+  <data name="PasswordRecoveryExpiry" xml:space="preserve">
+    <value>El código vence en unos minutos. Si no fuiste vos, ignorá este correo.</value>
+  </data>
+  <data name="PasswordRecoveryTip" xml:space="preserve">
+    <value>Tip: copiá y pegá el código exactamente como aparece.</value>
+  </data>
+  <data name="PasswordRecoveryFooter" xml:space="preserve">
+    <value>Gracias,</value>
+  </data>
+  <data name="PasswordRecoveryTeam" xml:space="preserve">
+    <value>El equipo de Events Tracker</value>
+  </data>
+
+  <!-- User Data Change Email -->
+  <data name="UserDataChangeSubject" xml:space="preserve">
+    <value>Actualización de Datos - Events Tracker</value>
+  </data>
+  <data name="UserDataChangeHeader" xml:space="preserve">
+    <value>Actualización de Datos en Events Tracker</value>
+  </data>
+  <data name="UserDataChangeBody" xml:space="preserve">
+    <value>Hemos actualizado tus datos en nuestro sistema.</value>
+  </data>
+  <data name="UserDataChangeDniLabel" xml:space="preserve">
+    <value>DNI</value>
+  </data>
+  <data name="UserDataChangePasswordGenerated" xml:space="preserve">
+    <value>Además, se ha generado una nueva contraseña para tu cuenta:</value>
+  </data>
+  <data name="UserDataChangePasswordAdvice" xml:space="preserve">
+    <value>Te recomendamos cambiar esta contraseña lo antes posible.</value>
+  </data>
+  <data name="UserDataChangeFooter" xml:space="preserve">
+    <value>Muchas gracias,</value>
+  </data>
+
+  <!-- Invitation Email -->
+  <data name="InvitationSubject" xml:space="preserve">
+    <value>Invitación a evento - Events Tracker</value>
+  </data>
+  <data name="InvitationHeader" xml:space="preserve">
+    <value>Invitación a evento</value>
+  </data>
+  <data name="InvitationGreeting" xml:space="preserve">
+    <value>como estas?</value>
+  </data>
+  <data name="InvitationInvitedBy" xml:space="preserve">
+    <value>te invitó al evento:</value>
+  </data>
+  <data name="InvitationLabel" xml:space="preserve">
+    <value>Invitación</value>
+  </data>
+  <data name="InvitationDateLabel" xml:space="preserve">
+    <value>Fecha</value>
+  </data>
+  <data name="InvitationLocationLabel" xml:space="preserve">
+    <value>Lugar</value>
+  </data>
+  <data name="InvitationAction" xml:space="preserve">
+    <value>Entrá a la app y revisá tus invitaciones para aceptarla o rechazarla.</value>
+  </data>
+  <data name="InvitationInstructions" xml:space="preserve">
+    <value>Abrí la app y buscá la invitación desde la sección "Invitaciones".</value>
+  </data>
+  <data name="InvitationTip" xml:space="preserve">
+    <value>si no reconocés este evento, podés ignorar este email.</value>
+  </data>
+  <data name="InvitationDefaultReceiver" xml:space="preserve">
+    <value>Hola</value>
+  </data>
+  <data name="InvitationDefaultSender" xml:space="preserve">
+    <value>Un usuario</value>
+  </data>
+  <data name="InvitationDefaultEvent" xml:space="preserve">
+    <value>Evento</value>
+  </data>
+
+  <!-- Common -->
+  <data name="AppName" xml:space="preserve">
+    <value>Events Tracker</value>
+  </data>
+  <data name="DefaultGreeting" xml:space="preserve">
+    <value>Hola</value>
+  </data>
+</root>

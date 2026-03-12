@@ -1,6 +1,6 @@
 using EventsTrackerApi.Data;
 using EventsTrackerApi.Models;
-using EventsTrackerApi.Utils;
+using EventsTrackerApi.Service.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.EntityFrameworkCore;
@@ -10,15 +10,23 @@ using EventsTrackerApi.DTOs.Invitations;
 
 namespace EventsTrackerApi.Service;
 
+/// <summary>
+/// Service for sending emails using SMTP.
+/// </summary>
 public class EmailSender : IEmailSender
 {
     private readonly EmailSettings _settings;
     private readonly ILogger<EmailSender> _logger;
+    private readonly IEmailTemplateService _emailTemplateService;
 
-    public EmailSender(IOptions<EmailSettings> options, ILogger<EmailSender> logger)
+    public EmailSender(
+        IOptions<EmailSettings> options, 
+        ILogger<EmailSender> logger,
+        IEmailTemplateService emailTemplateService)
     {
         _settings = options.Value;
         _logger = logger;
+        _emailTemplateService = emailTemplateService;
     }
 
     public async Task SendAsync(EmailOptions mailOptions)
@@ -56,16 +64,20 @@ public class EmailSender : IEmailSender
         => SendAsync(new EmailOptions
         {
             To = to,
-            Subject = "Recuperación de Contraseña",
-            Body = Commons.HtmlBodyEmailRecoveryPassword(resetToken)
+            Subject = _emailTemplateService.GeneratePasswordRecoveryEmail(resetToken).Contains("Password Recovery") 
+                ? "Password Recovery - Events Tracker" 
+                : "Recuperación de Contraseña",
+            Body = _emailTemplateService.GeneratePasswordRecoveryEmail(resetToken)
         });
 
     public Task SendUserDataChangeAsync(string to, string firstName, string dni, string plainPassword)
         => SendAsync(new EmailOptions
         {
             To = to,
-            Subject = "Actualizar los datos del usuario",
-            Body = Commons.HtmlBodyEmailUserDataChange(firstName, dni, plainPassword)
+            Subject = _emailTemplateService.GenerateUserDataChangeEmail(firstName, dni, plainPassword).Contains("Data Update") 
+                ? "Data Update - Events Tracker" 
+                : "Actualización de Datos",
+            Body = _emailTemplateService.GenerateUserDataChangeEmail(firstName, dni, plainPassword)
         });
 
     public Task SendEventInvitationAsync(InvitationEmailModelDto invitationEmailModelDto)
@@ -73,6 +85,6 @@ public class EmailSender : IEmailSender
     {
         To = invitationEmailModelDto.To,
         Subject = $"Te invitaron al evento: {invitationEmailModelDto.EventName}",
-        Body = Commons.HtmlBodyInvitationEmail(invitationEmailModelDto)
+        Body = _emailTemplateService.GenerateInvitationEmail(invitationEmailModelDto)
     });
 }

@@ -9,6 +9,7 @@ using EventsTrackerApi.Repositories;
 using EventsTrackerApi.Models;
 using Microsoft.OpenApi.Models;
 using EventsTrackerApi.Service;
+using EventsTrackerApi.Service.Interfaces;
 using EventsTrackerApi.Job;
 using Microsoft.AspNetCore.Diagnostics;
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,12 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ));
 
 builder.WebHost.UseUrls("http://*:5000");
+
+// Configure JWT options
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+    ?? throw new InvalidOperationException("JWT configuration is missing.");
+
 // Configuración de JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -34,9 +41,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            ValidIssuer = jwtOptions.Issuer,
+            ValidAudience = jwtOptions.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
             ClockSkew = TimeSpan.Zero
         };
     });
@@ -130,6 +137,24 @@ builder.Services.AddScoped<IEventInvitationRepository, EventInvitationRepository
 // Favorites module repositories
 builder.Services.AddScoped<IRepository<Favorite>, FavoriteRepository>();
 builder.Services.AddScoped<IFavoriteRepository, FavoriteRepository>();
+
+// Services - Password Service
+builder.Services.AddScoped<IPasswordService, PasswordService>();
+
+// Services - Auth Service
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Services - User Service
+builder.Services.AddScoped<IUserService, UserService>();
+
+// Services - Invitation Service
+builder.Services.AddScoped<IInvitationService, InvitationService>();
+
+// Services - Localization Service
+builder.Services.AddSingleton<ILocalizationService, LocalizationService>();
+
+// Services - Email Template Service
+builder.Services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 
 // Opciones de Firebase (ProjectId y CredentialsPath)
 builder.Services.Configure<FirebaseOptionsConfig>(builder.Configuration.GetSection("Firebase"));

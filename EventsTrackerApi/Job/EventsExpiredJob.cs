@@ -18,7 +18,7 @@ public class EventsForDefeatJob(
     private readonly FcmService _fcm = fcm;
     private readonly IOptions<NotificationsOptions> _opts = opts;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
-    private readonly int MINUTES_TO_SYNC = 60; // cada 60 minutos
+    private readonly int MINUTES_TO_SYNC = 15; // cada 60 minutos
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
